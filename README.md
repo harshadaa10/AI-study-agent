@@ -1,1 +1,1 @@
-# AI-study-agent
+# AI Study Agent
