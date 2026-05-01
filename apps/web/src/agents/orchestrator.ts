@@ -3,6 +3,7 @@
 // ---- TASK TYPES ----
 // These are the only valid task types your system accepts
 // "as const" tells TypeScript these are fixed values, not just any string
+import { processNotesAgent } from './notesAgent'
 export const TASK_TYPES = {
   GENERATE_PLAN:        'GENERATE_PLAN',
   PROCESS_NOTES:        'PROCESS_NOTES',
@@ -75,6 +76,12 @@ export async function orchestrate(request: AgentRequest): Promise<AgentResponse>
           success: true,
           data: { message: 'Goal Tracker coming on Day 17' }
         }
+      case TASK_TYPES.PROCESS_NOTES:
+        const { materialId, pdfText } = request.payload as {
+        materialId: string
+        pdfText: string
+        }
+       return await processNotesAgent(request.userId, materialId, pdfText)
 
       default:
         return {
