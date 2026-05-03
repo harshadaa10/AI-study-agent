@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js"
+import { generateEmbedding } from '../utils/embeddings'
 
 // ---- CHUNKING FUNCTION ----
 function splitIntoChunks(text: string, chunkSize = 2000, overlap = 200): string[] {
@@ -150,6 +151,40 @@ export async function processNotesAgent(
       allNotes.push(notes)
       notesCreated++
       console.log(`[NotesAgent] ✅ Chunk ${i + 1} saved to DB`)
+      // ✅ Generate and save embedding for this note
+try {
+  console.log(`[NotesAgent] Generating embedding for chunk ${i + 1}...`)
+
+  // Get the note's ID that was just inserted
+  const { data: savedNote } = await supabase
+    .from('notes')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('material_id', materialId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  if (savedNote) {
+    const embedding = await generateEmbedding(notes)
+
+    const { error: embeddingError } = await supabase
+      .from('notes_embeddings')
+      .insert({
+        note_id:   savedNote.id,
+        embedding: JSON.stringify(embedding),  // pgvector accepts JSON array format
+      })
+
+    if (embeddingError) {
+      console.error(`[NotesAgent] Embedding save failed:`, embeddingError.message)
+    } else {
+      console.log(`[NotesAgent] ✅ Embedding saved for chunk ${i + 1}`)
+    }
+  }
+} catch (embErr) {
+  // Don't fail the whole request if embedding fails
+  console.error(`[NotesAgent] Embedding generation failed:`, embErr)
+}
 
       // 5. Delay between chunks to avoid rate limits
       if (i < chunks.length - 1) {
