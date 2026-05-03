@@ -1,23 +1,34 @@
-import fetch from "node-fetch"
 import { createClient } from "@supabase/supabase-js"
 
-export async function processNotesAgent(
-  userId: string,
-  materialId: string,
-  text: string
-) {
-  try {
-    if (!text || text.trim().length < 20) {
-      return {
-        success: false,
-        notesCreated: 0,
-        error: "Text too small to process",
-      }
+// ---- CHUNKING FUNCTION ----
+function splitIntoChunks(text: string, chunkSize = 2000, overlap = 200): string[] {
+  const trimmed = text.trim()
+
+  // If text is shorter than chunkSize, just return it as one chunk
+  if (trimmed.length <= chunkSize) {
+    return trimmed.length > 20 ? [trimmed] : []
+  }
+
+  const chunks: string[] = []
+  let start = 0
+
+  while (start < trimmed.length) {
+    const end = Math.min(start + chunkSize, trimmed.length)
+    const chunk = trimmed.slice(start, end).trim()
+    if (chunk.length > 20) {
+      chunks.push(chunk)
     }
+    if (end === trimmed.length) break  // reached the end — stop
+    start = end - overlap
+  }
 
-    // Limit text to avoid token overflow
-    const inputText = text.slice(0, 3000)
+  return chunks
+}
 
+// ---- AI CALL FOR ONE CHUNK ----
+// Uses global fetch (built into Next.js 14 — no import needed)
+async function processChunk(chunk: string): Promise<string | null> {
+  try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -29,11 +40,32 @@ export async function processNotesAgent(
         messages: [
           {
             role: "system",
-            content: "You are an expert note-taking assistant. Convert text into clean, structured study notes with headings and bullet points.",
+            content: "You are an expert study notes generator. Always follow the exact output format requested.",
           },
           {
             role: "user",
-            content: `Convert this into structured notes:\n\n${inputText}`,
+            content: `Given this text chunk, generate:
+1. Exactly 3 concise bullet points summarising the key ideas
+2. One detailed explanation paragraph
+3. One exam-style answer a student could write
+
+Text chunk:
+"""
+${chunk}
+"""
+
+Respond in EXACTLY this format, with these exact headings:
+
+BULLET POINTS:
+- point 1
+- point 2
+- point 3
+
+EXPLANATION:
+[write your explanation paragraph here]
+
+EXAM ANSWER:
+[write your exam-style answer here]`,
           },
         ],
       }),
@@ -42,49 +74,103 @@ export async function processNotesAgent(
     const data: any = await response.json()
 
     if (!response.ok) {
-      console.error("AI ERROR:", data)
-      return { success: false, notesCreated: 0, error: "AI request failed" }
+      console.error("[NotesAgent] AI error:", JSON.stringify(data))
+      return null
     }
 
-    const notes = data.choices?.[0]?.message?.content
-
-    if (!notes) {
-      return { success: false, notesCreated: 0, error: "No notes generated" }
+    const content = data.choices?.[0]?.message?.content
+    if (!content) {
+      console.error("[NotesAgent] AI returned empty content")
+      return null
     }
 
-    // ✅ Save to Supabase notes table
+    return content
+
+  } catch (err) {
+    console.error("[NotesAgent] processChunk threw:", err)
+    return null
+  }
+}
+
+
+// ---- MAIN AGENT FUNCTION ----
+export async function processNotesAgent(
+  userId: string,
+  materialId: string,
+  text: string
+) {
+  try {
+    console.log("[NotesAgent] Starting — text length:", text.length)
+
+    if (!text || text.trim().length < 20) {
+      return { success: false, notesCreated: 0, error: "Text too small to process" }
+    }
+
+    // 1. Split into overlapping chunks
+    const chunks = splitIntoChunks(text)
+    console.log(`[NotesAgent] Split into ${chunks.length} chunk(s)`)
+    console.log(`[NotesAgent] Chunk 0 length:`, chunks[0]?.length ?? 'NO CHUNKS')
+
+    // 2. Supabase client
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    const { error: dbError } = await supabase
-      .from("notes")
-      .insert({
-        user_id:     userId,
-        material_id: materialId,
-        content:     notes,
-      })
+    let notesCreated = 0
+    const allNotes: string[] = []
 
-    if (dbError) {
-      console.error("[NotesAgent] DB insert error:", dbError)
-      return {
-        success: false,
-        notesCreated: 0,
-        error: `Database save failed: ${dbError.message}`,
+    // 3. Process each chunk
+    for (let i = 0; i < chunks.length; i++) {
+      console.log(`[NotesAgent] Processing chunk ${i + 1}/${chunks.length}...`)
+
+      const notes = await processChunk(chunks[i])
+
+      if (!notes) {
+        console.warn(`[NotesAgent] Chunk ${i + 1} returned no notes — skipping`)
+        continue
+      }
+
+      console.log(`[NotesAgent] Chunk ${i + 1} AI response received, saving to DB...`)
+
+      // 4. Save to Supabase
+      const { error: dbError } = await supabase
+        .from("notes")
+        .insert({
+          user_id:     userId,
+          material_id: materialId,
+          content:     notes,
+        })
+
+      if (dbError) {
+        console.error(`[NotesAgent] DB insert failed for chunk ${i + 1}:`, dbError.message)
+        continue
+      }
+
+      allNotes.push(notes)
+      notesCreated++
+      console.log(`[NotesAgent] ✅ Chunk ${i + 1} saved to DB`)
+
+      // 5. Delay between chunks to avoid rate limits
+      if (i < chunks.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 600))
       }
     }
 
-    console.log("[NotesAgent] ✅ Notes saved to database successfully")
+    if (notesCreated === 0) {
+      return { success: false, notesCreated: 0, error: "No chunks were successfully processed" }
+    }
+
+    console.log(`[NotesAgent] ✅ Done — ${notesCreated}/${chunks.length} chunks saved`)
 
     return {
       success: true,
-      notesCreated: 1,
-      notes,
+      notesCreated,
+      notes: allNotes.join("\n\n---\n\n"),
     }
 
   } catch (err) {
-    console.error("AGENT ERROR:", err)
+    console.error("[NotesAgent] Fatal error:", err)
     return {
       success: false,
       notesCreated: 0,
