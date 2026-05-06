@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { userId, subject, examDate, hoursPerDay } = body
+    const { userId, subjects, examDate, hoursPerDay } = body
 
     // ---- VALIDATION ----
     if (!userId) {
@@ -16,32 +16,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!subject || subject.trim().length < 2) {
+    if (!subjects || !Array.isArray(subjects) || subjects.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'subject is required (min 2 characters)' },
+        { success: false, error: 'subjects must be a non-empty array e.g. ["Math", "Physics"]' },
         { status: 400 }
       )
     }
 
-    if (!examDate) {
+    if (!examDate || !/^\d{4}-\d{2}-\d{2}$/.test(examDate)) {
       return NextResponse.json(
-        { success: false, error: 'examDate is required (YYYY-MM-DD format)' },
+        { success: false, error: 'examDate is required in YYYY-MM-DD format' },
         { status: 400 }
       )
     }
 
-    // Validate date format
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/
-    if (!dateRegex.test(examDate)) {
-      return NextResponse.json(
-        { success: false, error: 'examDate must be in YYYY-MM-DD format' },
-        { status: 400 }
-      )
-    }
-
-    // Make sure exam is in the future
-    const examDateTime = new Date(examDate)
-    if (examDateTime <= new Date()) {
+    if (new Date(examDate) <= new Date()) {
       return NextResponse.json(
         { success: false, error: 'examDate must be in the future' },
         { status: 400 }
@@ -56,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     const input: PlannerInput = {
-      subject:     subject.trim(),
+      subjects:    subjects.map((s: string) => s.trim()),
       examDate,
       hoursPerDay: Number(hoursPerDay),
     }

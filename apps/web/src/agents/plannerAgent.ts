@@ -2,41 +2,34 @@ import { createClient } from '@supabase/supabase-js'
 
 // ---- TYPES ----
 
-// This is what the user sends in
 export type PlannerInput = {
-  subject:      string   // e.g. "Machine Learning"
-  examDate:     string   // e.g. "2025-06-15" (YYYY-MM-DD format)
-  hoursPerDay:  number   // e.g. 2
+  subjects:    string[]  // e.g. ["Machine Learning", "Statistics", "Linear Algebra"]
+  examDate:    string    // e.g. "2026-06-01"
+  hoursPerDay: number    // e.g. 2
 }
 
-// This is the shape of one day in the study plan
-type StudyDay = {
-  day:       number    // 1, 2, 3...
-  date:      string    // "2025-06-01"
-  topics:    string[]  // ["Neural Networks", "Backpropagation"]
-  tasks:     string[]  // ["Read chapter 3", "Solve 5 practice problems"]
-  hours:     number    // how many hours this day
-  focus:     string    // one sentence summary of the day's goal
+// Matches the plan's JSON schema exactly
+type PlanTask = {
+  day:              number
+  subject:          string
+  topic:            string
+  duration_minutes: number
+  priority:         'high' | 'medium' | 'low'
 }
 
-// This is the full plan Llama returns
 type StudyPlan = {
-  subject:        string
-  totalDays:      number
-  dailyHours:     number
-  examDate:       string
-  overview:       string      // 2-3 sentence summary of the plan
-  days:           StudyDay[]
-  examTips:       string[]    // 3 last-minute exam tips
+  week:      PlanTask[]
+  overview:  string
+  examTips:  string[]
 }
 
 
-// ---- HELPER — calculate days until exam ----
+// ---- HELPER ----
 function daysUntilExam(examDate: string): number {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const exam  = new Date(examDate)
-  const diff  = exam.getTime() - today.getTime()
+  const exam = new Date(examDate)
+  const diff = exam.getTime() - today.getTime()
   return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)))
 }
 
@@ -48,53 +41,53 @@ export async function plannerAgent(
 ): Promise<{ success: boolean; planId?: string; plan?: StudyPlan; error?: string }> {
 
   try {
-    console.log(`[PlannerAgent] Generating plan for: ${input.subject}`)
+    console.log(`[PlannerAgent] Generating plan for subjects: ${input.subjects.join(', ')}`)
 
     const daysLeft = daysUntilExam(input.examDate)
-    // Cap at 7 days for the plan — manageable and focused
     const planDays = Math.min(daysLeft, 7)
+    const totalMinutes = input.hoursPerDay * 60
 
     console.log(`[PlannerAgent] Days until exam: ${daysLeft}, planning for: ${planDays} days`)
 
-    // ---- BUILD THE PROMPT ----
-    const prompt = `You are an expert study planner. Create a detailed ${planDays}-day study plan.
+    // ---- BUILD PROMPT ----
+   const prompt = `You are an expert study planner. Create a ${planDays}-day study plan.
 
 Student details:
-- Subject: ${input.subject}
+- Subjects: ${input.subjects.join(', ')}
 - Exam date: ${input.examDate}
 - Days until exam: ${daysLeft}
-- Available study hours per day: ${input.hoursPerDay}
+- Study time per day: ${input.hoursPerDay} hours (${totalMinutes} minutes)
 - Today's date: ${new Date().toISOString().split('T')[0]}
 
-Return a JSON object with EXACTLY this structure (no extra text, just the JSON):
-{
-  "subject": "${input.subject}",
-  "totalDays": ${planDays},
-  "dailyHours": ${input.hoursPerDay},
-  "examDate": "${input.examDate}",
-  "overview": "2-3 sentence overview of the study strategy",
-  "days": [
-    {
-      "day": 1,
-      "date": "YYYY-MM-DD",
-      "topics": ["Topic 1", "Topic 2"],
-      "tasks": ["Task 1", "Task 2", "Task 3"],
-      "hours": ${input.hoursPerDay},
-      "focus": "One sentence describing today's main goal"
-    }
-  ],
-  "examTips": [
-    "Tip 1",
-    "Tip 2", 
-    "Tip 3"
-  ]
-}`
+IMPORTANT RULES:
+- The "week" array MUST have exactly ${planDays} objects — one per day
+- Distribute subjects across days: ${input.subjects.map((s, i) => `Day ${i + 1}: ${s}`).join(', ')}, then repeat
+- Each object in "week" must have ALL 5 fields: day, subject, topic, duration_minutes, priority
+- duration_minutes must be exactly ${totalMinutes} for every day
+- priority must be exactly "high", "medium", or "low"
 
-    const systemPrompt = `You are an expert academic study planner with years of experience helping students ace exams. 
-You create realistic, actionable study plans tailored to each student's timeline and subject.
+Return ONLY this JSON, no extra text, no markdown:
+{
+  "overview": "Brief 2-sentence study strategy",
+  "week": [
+    { "day": 1, "subject": "Machine Learning", "topic": "Introduction and types of ML", "duration_minutes": ${totalMinutes}, "priority": "high" },
+    { "day": 2, "subject": "Statistics", "topic": "Descriptive statistics and probability", "duration_minutes": ${totalMinutes}, "priority": "high" },
+    { "day": 3, "subject": "Linear Algebra", "topic": "Vectors and matrix operations", "duration_minutes": ${totalMinutes}, "priority": "medium" },
+    { "day": 4, "subject": "Machine Learning", "topic": "Supervised learning algorithms", "duration_minutes": ${totalMinutes}, "priority": "high" },
+    { "day": 5, "subject": "Statistics", "topic": "Hypothesis testing", "duration_minutes": ${totalMinutes}, "priority": "medium" },
+    { "day": 6, "subject": "Linear Algebra", "topic": "Eigenvalues and eigenvectors", "duration_minutes": ${totalMinutes}, "priority": "medium" },
+    { "day": 7, "subject": "Machine Learning", "topic": "Model evaluation and review", "duration_minutes": ${totalMinutes}, "priority": "high" }
+  ],
+  "examTips": ["Tip 1", "Tip 2", "Tip 3"]
+}
+
+Now generate the actual plan for the subjects: ${input.subjects.join(', ')} following the exact same structure above but with real topics.`
+
+    const systemPrompt = `You are an expert academic study planner.
+You create realistic, actionable study plans tailored to each student's subjects and timeline.
 Always respond with valid JSON only. No markdown, no backticks, no explanation.`
 
-    // ---- CALL LLAMA VIA OPENROUTER ----
+    // ---- CALL LLAMA ----
     console.log('[PlannerAgent] Calling Llama via OpenRouter...')
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -120,28 +113,24 @@ Always respond with valid JSON only. No markdown, no backticks, no explanation.`
     const data = await response.json() as any
     const rawText = data.choices?.[0]?.message?.content
 
-    if (!rawText) {
-      throw new Error('Llama returned empty response')
-    }
+    if (!rawText) throw new Error('Llama returned empty response')
 
     console.log('[PlannerAgent] AI response received, parsing JSON...')
 
-    // ---- PARSE THE JSON PLAN ----
+    // ---- PARSE JSON ----
     let plan: StudyPlan
     try {
       plan = JSON.parse(rawText)
     } catch {
-      // Strip backticks if model wrapped JSON in them anyway
       const cleaned = rawText.replace(/```json|```/g, '').trim()
       plan = JSON.parse(cleaned)
     }
 
-    // Basic validation — make sure days array exists
-    if (!plan.days || !Array.isArray(plan.days) || plan.days.length === 0) {
-      throw new Error('Plan is missing days array')
+    if (!plan.week || !Array.isArray(plan.week) || plan.week.length === 0) {
+      throw new Error('Plan is missing week array')
     }
 
-    console.log(`[PlannerAgent] Plan parsed — ${plan.days.length} days generated`)
+    console.log(`[PlannerAgent] Plan parsed — ${plan.week.length} tasks generated`)
 
     // ---- SAVE TO SUPABASE ----
     const supabase = createClient(
@@ -149,24 +138,47 @@ Always respond with valid JSON only. No markdown, no backticks, no explanation.`
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    const { data: savedPlan, error: dbError } = await supabase
+    // 1. Save the overall plan to study_plans
+    const { data: savedPlan, error: planError } = await supabase
       .from('study_plans')
       .insert({
-        user_id:      userId,
-        subject:      input.subject,
-        exam_date:    input.examDate,
+        user_id:       userId,
+        subject:       input.subjects.join(', '),
+        exam_date:     input.examDate,
         hours_per_day: input.hoursPerDay,
-        plan_data:    plan,
-        status:       'active',
+        plan_data:     plan,
+        status:        'active',
       })
       .select('id')
       .single()
 
-    if (dbError) {
-      throw new Error(`Database save failed: ${dbError.message}`)
-    }
+    if (planError) throw new Error(`study_plans insert failed: ${planError.message}`)
 
     console.log(`[PlannerAgent] ✅ Plan saved with ID: ${savedPlan.id}`)
+
+    // 2. Save each task to plan_tasks
+    const taskRows = plan.week.map(task => ({
+      user_id:       userId,
+      plan_id:       savedPlan.id,
+      day_number:    task.day,
+      subject_id:    null,          // no subject_id lookup needed for now
+      task:          task.topic,
+      topic:         task.topic,
+      duration_mins: task.duration_minutes,
+      priority:      task.priority,
+      status:        'pending',
+    }))
+
+    const { error: tasksError } = await supabase
+      .from('plan_tasks')
+      .insert(taskRows)
+
+    if (tasksError) {
+      // Don't fail the whole request — plan is saved, tasks are bonus
+      console.error(`[PlannerAgent] plan_tasks insert failed:`, tasksError.message)
+    } else {
+      console.log(`[PlannerAgent] ✅ ${taskRows.length} tasks saved to plan_tasks`)
+    }
 
     return {
       success: true,

@@ -44,12 +44,12 @@ export async function orchestrate(request: AgentRequest): Promise<AgentResponse>
     switch (request.taskType) {
 
   case TASK_TYPES.GENERATE_PLAN: {
-  const { subject, examDate, hoursPerDay } = request.payload as {
-    subject:     string
+  const { subjects, examDate, hoursPerDay } = request.payload as {
+    subjects:    string[]
     examDate:    string
     hoursPerDay: number
   }
-  return await plannerAgent(request.userId, { subject, examDate, hoursPerDay })
+  return await plannerAgent(request.userId, { subjects, examDate, hoursPerDay })
 }
         return {
           success: true,
