@@ -5,6 +5,8 @@
 // "as const" tells TypeScript these are fixed values, not just any string
 import { processNotesAgent } from './notesAgent'
 import { plannerAgent } from './plannerAgent'
+import { analyzerAgent } from './analyzerAgent'
+
 export const TASK_TYPES = {
   GENERATE_PLAN:        'GENERATE_PLAN',
   PROCESS_NOTES:        'PROCESS_NOTES',
@@ -63,13 +65,9 @@ export async function orchestrate(request: AgentRequest): Promise<AgentResponse>
           data: { message: 'Notes Agent coming on Days 12–13' }
         }
 
-      case TASK_TYPES.ANALYZE_PERFORMANCE:
-        // Day 15 — Analyzer Agent plugs in here
-        return {
-          success: true,
-          data: { message: 'Analyzer Agent coming on Day 15' }
-        }
-
+      case TASK_TYPES.ANALYZE_PERFORMANCE: {
+          return await analyzerAgent(request.userId)
+       }
       case TASK_TYPES.GET_REVISION_QUEUE:
         // Day 16 — Revision Agent plugs in here
         return {
