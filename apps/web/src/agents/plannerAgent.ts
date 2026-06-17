@@ -23,6 +23,13 @@ type StudyPlan = {
   examTips:  string[]
 }
 
+type ChatCompletionResponse = {
+  choices?: {
+    message?: {
+      content?: string
+    }
+  }[]
+}
 
 // ---- HELPER ----
 function daysUntilExam(examDate: string): number {
@@ -110,7 +117,7 @@ Always respond with valid JSON only. No markdown, no backticks, no explanation.`
       throw new Error(`OpenRouter error: ${err}`)
     }
 
-    const data = await response.json() as any
+    const data = await response.json() as ChatCompletionResponse
     const rawText = data.choices?.[0]?.message?.content
 
     if (!rawText) throw new Error('Llama returned empty response')
@@ -162,6 +169,7 @@ Always respond with valid JSON only. No markdown, no backticks, no explanation.`
       plan_id:       savedPlan.id,
       day_number:    task.day,
       subject_id:    null,          // no subject_id lookup needed for now
+      subject_name:  task.subject,
       task:          task.topic,
       topic:         task.topic,
       duration_mins: task.duration_minutes,

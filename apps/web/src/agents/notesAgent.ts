@@ -1,6 +1,14 @@
 import { createClient } from "@supabase/supabase-js"
 import { generateEmbedding } from '../utils/embeddings'
 
+type ChatCompletionResponse = {
+  choices?: {
+    message?: {
+      content?: string
+    }
+  }[]
+}
+
 // ---- CHUNKING FUNCTION ----
 function splitIntoChunks(text: string, chunkSize = 2000, overlap = 200): string[] {
   const trimmed = text.trim()
@@ -72,7 +80,7 @@ EXAM ANSWER:
       }),
     })
 
-    const data: any = await response.json()
+    const data = await response.json() as ChatCompletionResponse
 
     if (!response.ok) {
       console.error("[NotesAgent] AI error:", JSON.stringify(data))

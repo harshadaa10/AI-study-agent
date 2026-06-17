@@ -5,20 +5,45 @@ import PDFParser from "pdf2json"
 
 export const runtime = "nodejs"
 
+type PdfParserError = Error | {
+  parserError: Error
+}
+
+type PdfTextRun = {
+  T: string
+}
+
+type PdfTextItem = {
+  R: PdfTextRun[]
+}
+
+type PdfPage = {
+  Texts: PdfTextItem[]
+}
+
+type PdfData = {
+  Pages: PdfPage[]
+}
+
+type ProcessNotesBody = {
+  userId?: string
+  materialId?: string
+}
+
 // ---- PDF EXTRACTION ----
 function extractTextFromPDF(buffer: Buffer): Promise<string> {
   return new Promise((resolve, reject) => {
     const pdfParser = new PDFParser()
 
-    pdfParser.on("pdfParser_dataError", (errData: any) => {
-      reject(errData.parserError)
+    pdfParser.on("pdfParser_dataError", (errData: PdfParserError) => {
+      reject(errData instanceof Error ? errData : errData.parserError)
     })
 
-    pdfParser.on("pdfParser_dataReady", (pdfData: any) => {
+    pdfParser.on("pdfParser_dataReady", (pdfData: PdfData) => {
       let text = ""
-      pdfData.Pages.forEach((page: any) => {
-        page.Texts.forEach((textItem: any) => {
-          textItem.R.forEach((r: any) => {
+      pdfData.Pages.forEach((page) => {
+        page.Texts.forEach((textItem) => {
+          textItem.R.forEach((r) => {
             text += decodeURIComponent(r.T) + " "
           })
         })
@@ -37,7 +62,7 @@ export async function POST(request: NextRequest) {
   console.log("[API /notes/process] Request received")
 
   try {
-    const body = await request.json()
+    const body = await request.json() as ProcessNotesBody
     console.log("[API /notes/process] Body:", body)
 
     const { userId, materialId } = body

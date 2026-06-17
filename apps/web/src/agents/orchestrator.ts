@@ -1,4 +1,5 @@
 import { analyzerAgent } from './analyzerAgent'
+import { goalTrackerAgent } from './goalTrackerAgent'
 import { processNotesAgent } from './notesAgent'
 import { plannerAgent } from './plannerAgent'
 import { getRevisionQueue, reviewNote } from './revisionAgent'
@@ -66,10 +67,7 @@ export async function orchestrate(request: AgentRequest): Promise<AgentResponse>
       }
 
       case TASK_TYPES.TRACK_GOALS:
-        return {
-          success: true,
-          data: { message: 'Goal Tracker coming on Day 17' },
-        }
+        return await goalTrackerAgent(request.userId)
 
       default:
         return {

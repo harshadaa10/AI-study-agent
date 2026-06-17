@@ -18,6 +18,13 @@ type SubjectStats = {
   completionRate:  number
 }
 
+type ChatCompletionResponse = {
+  choices?: {
+    message?: {
+      content?: string
+    }
+  }[]
+}
 
 // ---- MAIN AGENT FUNCTION ----
 export async function analyzerAgent(
@@ -151,7 +158,7 @@ Always respond with valid JSON only. No markdown, no backticks, no explanation.`
       throw new Error(`OpenRouter error: ${err}`)
     }
 
-    const data = await response.json() as any
+    const data = await response.json() as ChatCompletionResponse
     const rawText = data.choices?.[0]?.message?.content
 
     if (!rawText) throw new Error('Llama returned empty response')

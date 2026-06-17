@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 export default function Home() {
-  // ✅ FIX: move inside component
-  const supabase = createBrowserSupabase();
-
+  const supabase = useMemo(() => createBrowserSupabase(), []);
   const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
@@ -31,7 +29,7 @@ export default function Home() {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase]);
 
   return (
     <div style={{ padding: "40px" }}>

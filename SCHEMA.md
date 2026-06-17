@@ -26,3 +26,6 @@ Stores AI embeddings for semantic search.
 ### revision_schedule
 Stores SM-2 spaced repetition state for each note, including interval, ease factor, repetitions,
 last reviewed time, and the next review date.
+
+### performance_logs
+Stores AI performance analysis and goal tracking progress snapshots for dashboards.
