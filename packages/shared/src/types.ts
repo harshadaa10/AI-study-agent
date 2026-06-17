@@ -38,3 +38,16 @@ export type Note = {
   created_at: string;
   updated_at: string;
 };
+
+export type RevisionSchedule = {
+  id: string;
+  user_id: string;
+  note_id: string;
+  interval_days: number;
+  ease_factor: number;
+  repetitions: number;
+  last_reviewed_at: string | null;
+  next_review_at: string;
+  created_at: string;
+  updated_at: string;
+};
