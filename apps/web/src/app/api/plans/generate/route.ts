@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { plannerAgent, PlannerInput } from '../../../../agents/plannerAgent'
+import { PlannerInput } from '../../../../agents/plannerAgent'
+import { orchestrate, TASK_TYPES } from '../../../../agents/orchestrator'
 
 export async function POST(request: NextRequest) {
   console.log('[API /plans/generate] Request received')
@@ -50,9 +51,13 @@ export async function POST(request: NextRequest) {
       hoursPerDay: Number(hoursPerDay),
     }
 
-    console.log('[API] Calling plannerAgent with:', input)
+    console.log('[API] Calling orchestrator planner flow with:', input)
 
-    const result = await plannerAgent(userId, input)
+    const result = await orchestrate({
+      userId,
+      taskType: TASK_TYPES.GENERATE_PLAN,
+      payload: input,
+    })
 
     return NextResponse.json(result)
 

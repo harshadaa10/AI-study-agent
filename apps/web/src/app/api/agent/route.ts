@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { orchestrate, AgentRequest, TASK_TYPES } from '../../../agents/orchestrator'
 
+export async function GET() {
+  return NextResponse.json({
+    success: true,
+    route: '/api/agent',
+    taskTypes: Object.values(TASK_TYPES),
+    operations: [
+      'Planner Agent',
+      'Notes Agent',
+      'Analyzer Agent',
+      'Revision Queue',
+      'Revision Review',
+      'Goal Tracker Agent',
+    ],
+  })
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Read the JSON body from the incoming request
