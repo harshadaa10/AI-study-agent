@@ -4,9 +4,10 @@ on:
   push:
     branches:
       - main
+      - day-*
   pull_request:
     branches:
-      - main
+      - "**"
 
 jobs:
   lint-frontend:
