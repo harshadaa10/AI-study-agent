@@ -9,6 +9,7 @@ export const TASK_TYPES = {
   PROCESS_NOTES: 'PROCESS_NOTES',
   ANALYZE_PERFORMANCE: 'ANALYZE_PERFORMANCE',
   GET_REVISION_QUEUE: 'GET_REVISION_QUEUE',
+  REVIEW_NOTE: 'REVIEW_NOTE',
   TRACK_GOALS: 'TRACK_GOALS',
 } as const
 
@@ -54,16 +55,23 @@ export async function orchestrate(request: AgentRequest): Promise<AgentResponse>
         return await analyzerAgent(request.userId)
 
       case TASK_TYPES.GET_REVISION_QUEUE: {
+        return await getRevisionQueue(request.userId)
+      }
+
+      case TASK_TYPES.REVIEW_NOTE: {
         const { noteId, quality } = request.payload as {
           noteId?: string
           quality?: number
         }
 
-        if (noteId && typeof quality === 'number') {
-          return await reviewNote(request.userId, noteId, quality)
+        if (!noteId || typeof quality !== 'number') {
+          return {
+            success: false,
+            error: 'noteId and numeric quality are required for REVIEW_NOTE',
+          }
         }
 
-        return await getRevisionQueue(request.userId)
+        return await reviewNote(request.userId, noteId, quality)
       }
 
       case TASK_TYPES.TRACK_GOALS:

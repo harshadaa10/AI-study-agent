@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     const result = await orchestrate({
       userId: body.userId,
-      taskType: TASK_TYPES.GET_REVISION_QUEUE,
+      taskType: TASK_TYPES.REVIEW_NOTE,
       payload: {
         noteId: body.noteId,
         quality: body.quality,

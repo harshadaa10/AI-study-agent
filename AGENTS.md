@@ -14,7 +14,7 @@ generic endpoint is `POST /api/agent` with this envelope:
 ## Orchestrator
 
 Routes `GENERATE_PLAN`, `PROCESS_NOTES`, `ANALYZE_PERFORMANCE`, `GET_REVISION_QUEUE`,
-and `TRACK_GOALS` to the matching agent. All responses use:
+`REVIEW_NOTE`, and `TRACK_GOALS` to the matching agent. All responses use:
 
 ```json
 { "success": true, "data": {}, "error": null }
