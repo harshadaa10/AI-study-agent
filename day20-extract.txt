@@ -1,0 +1,230 @@
+                                                                                        AI Study Agent -- 30-Day Build Plan
+
+                                               PHASE 5
+
+                            Deploy & Launch
+
+        Days 26 ­ 30 | Goal: Stable production deployment with monitoring
+
+Day     Focus              Tasks                                     GitHub Action
+Day 26  Production Config
+                           ­ Set all environment variables in        git add . && git commit
+Day 27  Error Monitoring                                             -m 'Day 26:
+                              Vercel Project Settings                Production config +
+                              Environment Variables (not just        security' && git push
+                              local .env.local)
+
+                           ­ Add OPENROUTER_API_KEY,
+
+                              COHERE_API_KEY,
+                              SUPABASE_URL,
+                              SUPABASE_SERVICE_KEY to
+                              Vercel environment variables
+
+                           ­ Update Supabase Auth settings:
+
+                              add your Vercel deployment URL to
+                              allowed redirect URLs
+
+                           ­ Enable Vercel Web Application
+
+                              Firewall (WAF) -- available in
+                              Project Settings  Security
+
+                           ­ Add rate limiting to your API routes
+
+                              using the rate-limiter-flexible
+                              package or Vercel's built-in edge
+                              rate limiting
+
+                           ­ Enable Vercel Edge Caching for
+
+                              static assets -- Next.js handles this
+                              automatically via the App Router
+                              cache headers
+
+                           ­ Test login and agent features on
+
+                              the production URL (not localhost)
+
+                           ­ Create free account at sentry.io        git add . && git commit
+                                                                     -m 'Day 27: Sentry
+                           ­ Install Sentry: bun add                 error monitoring' &&
+                                                                     git push
+                              @sentry/nextjs in apps/web
+
+                           ­ Run: npx @sentry/wizard@latest -i
+
+                              nextjs and follow the setup wizard
+
+                           ­ Install Sentry for agents: bun add
+
+                              @sentry/bun in apps/agents
+
+                           ­ Add Sentry.captureException(error)
+
+                              in all agent catch blocks
+
+                           ­ Test by triggering an error manually
+
+                              and verifying it appears in Sentry
+                              dashboard
+
+                           ­ Set up Sentry email alerts for new
+
+                              errors
+
+Beginner-Friendly · Step-by-Step · From Scratch to Deployment        Page -- AI Study Agent
+                                                               AI Study Agent -- 30-Day Build Plan
+
+Day     Focus          Tasks                                     GitHub Action
+Day 28
+        Performance &  ­ Run Lighthouse audit on your            git add . && git commit
+        Testing                                                  -m 'Day 28:
+                          Vercel URL (in Chrome: F12             Lighthouse fixes +
+                          Lighthouse  Analyze)                   Playwright tests' &&
+                                                                 git push
+                       ­ Fix any performance issues flagged
+
+                          (common: missing image alt tags,
+                          large JS bundles)
+
+                       ­ Write 3 end-to-end tests using
+
+                          Playwright: signup flow, upload
+                          flow, dashboard load
+
+                       ­ Install Playwright: bun add -d
+
+                          @playwright/test && bunx
+                          playwright install
+
+                       ­ Add Playwright tests to GitHub
+
+                          Actions CI workflow
+
+                       ­ Test on mobile: open your Vercel
+
+                          URL on your actual phone
+
+                       ­ Fix any layout issues found on
+
+                          mobile screens
+
+Day 29  Documentation  ­ Write a complete README.md:             git add . && git commit
+                                                                 -m 'Day 29: Full
+                          what the project is, how to run it     documentation' && git
+                          locally, how to deploy                 push
+
+                       ­ Create CONTRIBUTING.md: how
+
+                          other developers can contribute to
+                          your project
+
+                       ­ Create docs/ARCHITECTURE.md:
+
+                          explain each component and how
+                          they connect
+
+                       ­ Add JSDoc comments to all agent
+
+                          functions explaining what they do
+
+                       ­ Create a short Loom or screen
+
+                          recording demo of the app (free at
+                          loom.com)
+
+                       ­ Add the demo link to your README
+
+                       ­ Write a brief blog post or LinkedIn
+
+                          post about what you built
+
+Day 30  Launch!        ­ Do a final full test of every feature:  git tag v1.0.0 && git
+                                                                 push origin v1.0.0 --
+                          register, onboard, upload, view        your launch commit!
+                          notes, check dashboard
+
+                       ­ Verify GitHub Actions CI is green
+
+                          (all tests passing)
+
+                       ­ Tag your release on GitHub: git tag
+
+                          v1.0.0 && git push origin v1.0.0
+
+                       ­ Share your live URL with friends,
+
+                          classmates, or on social media
+
+                       ­ Open GitHub  your repo  make
+
+                          it Public if it isn't already
+
+Beginner-Friendly · Step-by-Step · From Scratch to Deployment    Page -- AI Study Agent
+                                                               AI Study Agent -- 30-Day Build Plan
+
+Day  Focus  Tasks                                              GitHub Action
+
+            ­ Add the project to your portfolio with
+
+               the live URL and GitHub link
+
+            ­ Celebrate -- you built and deployed
+
+               a full AI-powered application in 30
+               days!
+
+Beginner-Friendly · Step-by-Step · From Scratch to Deployment  Page -- AI Study Agent
+                                                                                                            AI Study Agent -- 30-Day Build Plan
+
+Appendix -- Essential Git Commands Reference
+
+You will use these commands every single day. Memorize them -- they are your safety net.
+
+Command                What it does
+git status             Shows which files you have changed today -- run this first
+                       always
+git add .              Stages ALL changed files, ready to be committed
+git add                Stages only one specific file
+apps/web/src/page.tsx
+git commit -m "your    Saves a snapshot of all staged changes with a description
+message"
+git push origin main   Uploads your commits to GitHub -- this is your backup
+git pull origin main   Downloads the latest changes from GitHub to your
+                       computer
+git log --oneline      Shows a compact list of all past commits
+git diff               Shows exactly what lines you changed since last commit
+git checkout -b        Creates a new branch for experimental work
+feature/new-thing
+git stash              Temporarily hides your uncommitted changes
+git stash pop          Restores the hidden changes
+
+Appendix -- When Things Go Wrong
+
+  Most Common Beginner Problems & Fixes
+  'Command not found' for bun/node/git  Close and reopen your terminal after installing
+  Environment variables not working  Make sure .env.local is in the apps/web/ folder (not
+  root)
+  Supabase connection error  Double-check your URL and anon key in .env.local match your
+  dashboard
+  OpenRouter API 401 error  Your OPENROUTER_API_KEY is wrong or not set -- check
+  Vercel environment variables
+  git push rejected  Run git pull origin main first to sync, then push again
+  Vercel build fails  Check the build log in Vercel dashboard, usually a missing env variable
+
+Beginner-Friendly · Step-by-Step · From Scratch to Deployment  Page -- AI Study Agent
+                                                                                                         AI Study Agent -- 30-Day Build Plan
+
+Agent returns garbled JSON  Add `respond only with valid JSON, no markdown backticks'
+to your prompt -- Llama models sometimes wrap JSON in backticks despite instructions; the
+callLLMForJSON() utility strips these automatically
+Supabase RLS blocking your own queries  Check that auth.uid() matches the user_id
+column
+
+                     You have everything you need. Start Day 1 today.
+                 30 days from now, a live AI-powered app will have your name on it.
+
+Beginner-Friendly · Step-by-Step · From Scratch to Deployment  Page -- AI Study Agent
+
