@@ -1,0 +1,48 @@
+﻿import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+function getServiceSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const body = (await request.json()) as { userId?: string; status?: string };
+
+    if (!body.userId) {
+      return NextResponse.json({ success: false, error: "userId is required" }, { status: 400 });
+    }
+
+    if (body.status !== "pending" && body.status !== "completed") {
+      return NextResponse.json(
+        { success: false, error: "status must be pending or completed" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = getServiceSupabase();
+    const { data, error } = await supabase
+      .from("plan_tasks")
+      .update({ status: body.status, updated_at: new Date().toISOString() })
+      .eq("id", params.id)
+      .eq("user_id", body.userId)
+      .select("id, status")
+      .single();
+
+    if (error) throw new Error(error.message);
+
+    return NextResponse.json({ success: true, task: data });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : "Server error" },
+      { status: 500 }
+    );
+  }
+}
+
