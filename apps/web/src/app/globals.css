@@ -1,26 +1,131 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  /* Dark-first palette: deep indigo base, purple + indigo brand */
+  --background: oklch(0.16 0.02 280);
+  --foreground: oklch(0.97 0.01 280);
+
+  --card: oklch(0.21 0.025 280);
+  --card-foreground: oklch(0.97 0.01 280);
+
+  --popover: oklch(0.19 0.025 280);
+  --popover-foreground: oklch(0.97 0.01 280);
+
+  --primary: oklch(0.62 0.22 295);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --secondary: oklch(0.55 0.2 270);
+  --secondary-foreground: oklch(0.99 0 0);
+
+  --muted: oklch(0.27 0.03 280);
+  --muted-foreground: oklch(0.7 0.03 280);
+
+  --accent: oklch(0.3 0.05 290);
+  --accent-foreground: oklch(0.97 0.01 280);
+
+  --border: oklch(0.32 0.03 285);
+  --ring: oklch(0.62 0.22 295);
+
+  --chart-1: oklch(0.62 0.22 295);
+  --chart-2: oklch(0.58 0.2 265);
+  --chart-3: oklch(0.7 0.16 200);
+  --chart-4: oklch(0.75 0.15 150);
+
+  --success: oklch(0.72 0.17 155);
+  --warning: oklch(0.78 0.16 75);
+  --danger: oklch(0.62 0.22 20);
+}
+
+* {
+  border-color: var(--border);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Ambient gradient backdrop */
+.app-aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.app-aurora::before,
+.app-aurora::after {
+  content: "";
+  position: absolute;
+  width: 50rem;
+  height: 50rem;
+  border-radius: 9999px;
+  filter: blur(120px);
+  opacity: 0.28;
+}
+.app-aurora::before {
+  background: oklch(0.62 0.22 295);
+  top: -18rem;
+  left: -10rem;
+}
+.app-aurora::after {
+  background: oklch(0.55 0.2 260);
+  bottom: -22rem;
+  right: -12rem;
+}
+
+/* Glassmorphism surface */
+.glass {
+  background: color-mix(in oklch, var(--card) 70%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in oklch, var(--border) 70%, transparent);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
 }
