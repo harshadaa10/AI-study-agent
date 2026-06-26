@@ -23,19 +23,25 @@ export async function GET(request: NextRequest) {
     const [logsResult, tasksResult] = await Promise.all([
       supabase
         .from("performance_logs")
-        .select("log_type, weak_areas, readiness_score, next_actions, progress_snapshot, created_at")
+        .select(`weak_areas,readiness_score,next_actions,analysis_data,created_at`)
         .eq("user_id", userId)
         .gte("created_at", since.toISOString())
         .order("created_at", { ascending: true }),
       supabase
         .from("plan_tasks")
-        .select("subject_name, status")
+        .select("subject_id, status")
         .eq("user_id", userId),
     ]);
 
-    const error = logsResult.error || tasksResult.error;
-    if (error) throw new Error(error.message);
+    if (logsResult.error) {
+  console.error("Performance Logs Error:", logsResult.error);
+  throw new Error(logsResult.error.message);
+}
 
+if (tasksResult.error) {
+  console.error("Tasks Error:", tasksResult.error);
+  throw new Error(tasksResult.error.message);
+}
     return NextResponse.json({
       success: true,
       logs: logsResult.data ?? [],

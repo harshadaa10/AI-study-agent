@@ -6,11 +6,10 @@
 - [x] Planner API
 - [x] Materials Upload API
 - [x] Notes Processing API
-- [x] Semantic Notes Search API
-- [ ] Revision API
-- [ ] Analytics API
-- [ ] Analyze API
-- [ ] Tasks API
+- [x] Notes Search API
+- [x] Revision Queue API
+- [x] Revision Review API
+- [x] Analytics API
 
 ## Phase 2 - UI Redesign
 
