@@ -143,13 +143,15 @@ export async function processNotesAgent(
       console.log(`[NotesAgent] Chunk ${i + 1} AI response received, saving to DB...`)
 
       // 4. Save to Supabase
-      const { error: dbError } = await supabase
-        .from("notes")
-        .insert({
-          user_id:     userId,
-          material_id: materialId,
-          content:     notes,
-        })
+      const { data: savedNote, error: dbError } = await supabase
+      .from("notes")
+      .insert({
+      user_id: userId,
+      material_id: materialId,
+     content: notes,
+  })
+  .select("id")
+  .single();
 
       if (dbError) {
         console.error(`[NotesAgent] DB insert failed for chunk ${i + 1}:`, dbError.message)
@@ -188,6 +190,28 @@ try {
     } else {
       console.log(`[NotesAgent] ✅ Embedding saved for chunk ${i + 1}`)
     }
+    const { error: revisionError } = await supabase
+  .from("revision_schedule")
+  .insert({
+    user_id: userId,
+    note_id: savedNote.id,
+    ease_factor: 2.5,
+    interval_days: 1,
+    repetitions: 0,
+    quality: null,
+    next_review_at: new Date().toISOString(),
+  });
+
+if (revisionError) {
+  console.error(
+    "[NotesAgent] Revision schedule error:",
+    revisionError.message
+  );
+} else {
+  console.log(
+    `[NotesAgent] ✅ Revision schedule created for chunk ${i + 1}`
+  );
+}
   }
 } catch (embErr) {
   // Don't fail the whole request if embedding fails
@@ -211,6 +235,7 @@ try {
       notesCreated,
       notes: allNotes.join("\n\n---\n\n"),
     }
+    
 
   } catch (err) {
     console.error("[NotesAgent] Fatal error:", err)

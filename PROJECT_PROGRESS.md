@@ -5,16 +5,12 @@
 - [x] Dashboard API
 - [x] Planner API
 - [x] Materials Upload API
-- [x] Notes Process API
-- [ ] Notes Search API
-- [ ] Note Details API
-- [ ] Revision Queue API
-- [ ] Revision Review API
+- [x] Notes Processing API
+- [x] Semantic Notes Search API
+- [ ] Revision API
 - [ ] Analytics API
 - [ ] Analyze API
-- [ ] Plans Generate API
 - [ ] Tasks API
-- [ ] Agent API
 
 ## Phase 2 - UI Redesign
 
