@@ -5,7 +5,7 @@
 - [x] Dashboard API
 - [x] Planner API
 - [x] Materials Upload API
-- [ ] Notes Process API
+- [x] Notes Process API
 - [ ] Notes Search API
 - [ ] Note Details API
 - [ ] Revision Queue API
