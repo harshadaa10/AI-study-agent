@@ -84,7 +84,10 @@ export async function POST(request: NextRequest) {
         upsert: false,
       });
 
-    if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+    if (uploadError) {
+  console.error("Storage Upload Error:", uploadError);
+  throw new Error(`Upload failed: ${uploadError.message}`);
+}
 
     const { data: publicUrlData } = supabase.storage.from(MATERIALS_BUCKET).getPublicUrl(filePath);
     const { data: material, error: materialError } = await supabase
@@ -97,7 +100,10 @@ export async function POST(request: NextRequest) {
       .select("id, file_name, file_url")
       .single();
 
-    if (materialError) throw new Error(`Material insert failed: ${materialError.message}`);
+   if (materialError) {
+  console.error("Material Insert Error:", materialError);
+  throw new Error(`Material insert failed: ${materialError.message}`);
+}
 
     const pdfText = await extractTextFromPDF(buffer);
 
@@ -122,6 +128,7 @@ export async function POST(request: NextRequest) {
       error: result.error,
     });
   } catch (error) {
+    console.error("Materials Upload API Error:", error);
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : "Server error" },
       { status: 500 }
