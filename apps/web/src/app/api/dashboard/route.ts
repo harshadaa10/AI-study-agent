@@ -20,10 +20,10 @@ export async function GET(request: NextRequest) {
     const today = new Date();
     today.setHours(23, 59, 59, 999);
 
-    const [tasksResult, revisionResult, analysisResult, goalsResult] = await Promise.all([
+    const [tasksResult, revisionResult, analysisResult] = await Promise.all([
       supabase
         .from("plan_tasks")
-        .select("id, task, topic, subject_name, duration_mins, priority, status, created_at")
+        .select("id, task, topic, subject_id, duration_mins, priority, status, created_at")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(8),
@@ -42,30 +42,29 @@ export async function GET(request: NextRequest) {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
-      supabase
-        .from("performance_logs")
-        .select("progress_snapshot, created_at")
-        .eq("user_id", userId)
-        .not("progress_snapshot", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
+      
     ]);
 
-    const error =
-      tasksResult.error || revisionResult.error || analysisResult.error || goalsResult.error;
+   if (tasksResult.error) {
+  console.error("Tasks Error:", tasksResult.error);
+  throw new Error(tasksResult.error.message);
+}
 
-    if (error) {
-      throw new Error(error.message);
-    }
+if (revisionResult.error) {
+  console.error("Revision Error:", revisionResult.error);
+  throw new Error(revisionResult.error.message);
+}
+
+if (analysisResult.error) {
+  console.error("Analysis Error:", analysisResult.error);
+  throw new Error(analysisResult.error.message);
+}
+
 
     const tasks = tasksResult.data ?? [];
     const completedTasks = tasks.filter((task) => task.status === "completed").length;
     const readinessScore = analysisResult.data?.readiness_score ?? null;
-    const snapshot = goalsResult.data?.progress_snapshot as
-      | { overall?: { completionPercentage?: number } }
-      | null
-      | undefined;
+   
 
     return NextResponse.json({
       success: true,
@@ -74,7 +73,7 @@ export async function GET(request: NextRequest) {
           tasksToday: tasks.filter((task) => task.status !== "completed").length,
           streakDays: completedTasks > 0 ? 1 : 0,
           readinessScore,
-          completionPercentage: snapshot?.overall?.completionPercentage ?? null,
+          completionPercentage: null,
         },
         tasks,
         revisionQueue: revisionResult.data ?? [],
@@ -82,10 +81,16 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Server error" },
-      { status: 500 }
-    );
-  }
+  console.error("Dashboard API Error:", error);
+
+  return NextResponse.json(
+    {
+      success: false,
+      error: error instanceof Error ? error.message : "Server error",
+    },
+    { status: 500 }
+  );
 }
+  }
+
 
