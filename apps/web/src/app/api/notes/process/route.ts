@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
 import { orchestrate, TASK_TYPES } from "@/agents/orchestrator"
 import PDFParser from "pdf2json"
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs"
 
@@ -74,14 +74,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Supabase client
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+  
 
     // Fetch material record
-    const { data: material, error: materialError } = await supabase
+    const { data: material, error: materialError } = await supabaseAdmin
       .from("uploaded_materials")
       .select("file_url, user_id")
       .eq("id", materialId)

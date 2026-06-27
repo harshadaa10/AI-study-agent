@@ -1,29 +1,12 @@
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
-type RevisionQueueItem = {
-  id: string;
-  note_id: string;
-  interval_days: number;
-  ease_factor: number;
-  repetitions: number;
-  quality: number | null;
-  next_review_at: string;
-  last_reviewed_at: string | null;
-  notes: {
-    content: string;
-  } | null;
-};
 
 export async function getRevisionQueue(userId: string) {
   try {
     const now = new Date().toISOString();
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("revision_schedule")
       .select(`
         id,
@@ -62,7 +45,7 @@ export async function reviewNote(
   quality: number
 ) {
   try {
-    const { data: revision, error } = await supabase
+    const { data: revision, error } = await supabaseAdmin
       .from("revision_schedule")
       .select("*")
       .eq("user_id", userId)
@@ -103,7 +86,7 @@ export async function reviewNote(
     const nextReview = new Date();
     nextReview.setDate(nextReview.getDate() + interval);
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from("revision_schedule")
       .update({
         repetitions,

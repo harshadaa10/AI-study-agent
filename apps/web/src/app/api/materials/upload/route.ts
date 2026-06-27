@@ -1,8 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { orchestrate, TASK_TYPES } from "@/agents/orchestrator";
 import PDFParser from "pdf2json";
-
+import { supabaseAdmin } from "@/lib/supabase/admin";
 export const runtime = "nodejs";
 
 const MATERIALS_BUCKET = "study-materials";
@@ -10,12 +9,6 @@ const MATERIALS_BUCKET = "study-materials";
 type PdfParserError = Error | { parserError: Error };
 type PdfData = { Pages: { Texts: { R: { T: string }[] }[] }[] };
 
-function getServiceSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 function decodePdfText(value: string) {
   try {
@@ -67,7 +60,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = getServiceSupabase();
+    const supabase = supabaseAdmin;
     const { data: buckets } = await supabase.storage.listBuckets();
 
     if (!buckets?.some((bucket) => bucket.name === MATERIALS_BUCKET)) {

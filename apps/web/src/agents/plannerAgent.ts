@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
-
+import { supabaseAdmin } from '@/lib/supabase/admin'
+import { callOpenRouter } from "@/lib/openrouter";
 // ---- TYPES ----
 
 export type PlannerInput = {
@@ -23,13 +23,6 @@ type StudyPlan = {
   examTips:  string[]
 }
 
-type ChatCompletionResponse = {
-  choices?: {
-    message?: {
-      content?: string
-    }
-  }[]
-}
 
 // ---- HELPER ----
 function daysUntilExam(examDate: string): number {
@@ -94,35 +87,16 @@ Now generate the actual plan for the subjects: ${input.subjects.join(', ')} foll
 You create realistic, actionable study plans tailored to each student's subjects and timeline.
 Always respond with valid JSON only. No markdown, no backticks, no explanation.`
 
-    // ---- CALL LLAMA ----
-    console.log('[PlannerAgent] Calling Llama via OpenRouter...')
+  // ---- CALL LLAMA ----
+console.log('[PlannerAgent] Calling Llama via OpenRouter...')
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'meta-llama/llama-3-8b-instruct',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user',   content: prompt }
-        ],
-      }),
-    })
+const rawText = await callOpenRouter(
+  systemPrompt,
+  prompt
+)
 
-    if (!response.ok) {
-      const err = await response.text()
-      throw new Error(`OpenRouter error: ${err}`)
-    }
-
-    const data = await response.json() as ChatCompletionResponse
-    const rawText = data.choices?.[0]?.message?.content
-
-    if (!rawText) throw new Error('Llama returned empty response')
-
-    console.log('[PlannerAgent] AI response received, parsing JSON...')
+console.log('[PlannerAgent] AI response received, parsing JSON...')
+   
 
     // ---- PARSE JSON ----
     let plan: StudyPlan
@@ -140,13 +114,9 @@ Always respond with valid JSON only. No markdown, no backticks, no explanation.`
     console.log(`[PlannerAgent] Plan parsed — ${plan.week.length} tasks generated`)
 
     // ---- SAVE TO SUPABASE ----
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
 
     // 1. Save the overall plan to study_plans
-    const { data: savedPlan, error: planError } = await supabase
+    const { data: savedPlan, error: planError } = await supabaseAdmin
       .from('study_plans')
       .insert({
         user_id:       userId,
@@ -177,7 +147,7 @@ Always respond with valid JSON only. No markdown, no backticks, no explanation.`
       status:        'pending',
     }))
 
-    const { error: tasksError } = await supabase
+    const { error: tasksError } = await supabaseAdmin
       .from('plan_tasks')
       .insert(taskRows)
 

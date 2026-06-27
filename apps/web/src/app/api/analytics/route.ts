@@ -1,12 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
-function getServiceSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
+
 
 export async function GET(request: NextRequest) {
   const userId = request.nextUrl.searchParams.get("userId");
@@ -16,7 +11,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const supabase = getServiceSupabase();
+    const supabase = supabaseAdmin;
     const since = new Date();
     since.setDate(since.getDate() - 30);
 

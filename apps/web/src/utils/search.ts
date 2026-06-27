@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 import { generateEmbedding } from './embeddings'
 
 export type SearchResult = {
@@ -20,13 +20,8 @@ export async function semanticSearch(
   const queryEmbedding = await generateEmbedding(query)
   console.log(`[Search] Embedding generated — ${queryEmbedding.length} dimensions`)
 
-  // 2. Ask Supabase to find the most similar notes using pgvector
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
 
-  const { data, error } = await supabase.rpc('match_notes', {
+  const { data, error } = await supabaseAdmin.rpc('match_notes', {
     query_embedding: queryEmbedding,
     match_user_id:   userId,
     match_count:     limit,
