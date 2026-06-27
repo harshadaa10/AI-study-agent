@@ -14,6 +14,7 @@
 - [x] Analyze API
 - [x] Plans Generate API
 - [x] Tasks API
+- [x] Agent API
 
 ## Phase 2 - UI Redesign
 
