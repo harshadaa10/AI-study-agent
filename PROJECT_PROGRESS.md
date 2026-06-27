@@ -13,6 +13,7 @@
 - [x] Analytics API
 - [x] Analyze API
 - [x] Plans Generate API
+- [x] Tasks API
 
 ## Phase 2 - UI Redesign
 
