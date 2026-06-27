@@ -7,6 +7,7 @@
 - [x] Materials Upload API
 - [x] Notes Processing API
 - [x] Notes Search API
+- [x] Note Details API
 - [x] Revision Queue API
 - [x] Revision Review API
 - [x] Analytics API

@@ -26,8 +26,16 @@ export async function GET(
       .eq("id", params.id)
       .eq("user_id", userId)
       .single();
-
-    if (materialError) throw new Error(materialError.message);
+      
+if (materialError || !material) {
+  return NextResponse.json(
+    {
+      success: false,
+      error: "Material not found",
+    },
+    { status: 404 }
+  );
+}
 
     const { data: notes, error: notesError } = await supabase
       .from("notes")
