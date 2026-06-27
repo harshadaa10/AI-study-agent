@@ -11,6 +11,8 @@
 - [x] Revision Queue API
 - [x] Revision Review API
 - [x] Analytics API
+- [x] Analyze API
+- [x] Plans Generate API
 
 ## Phase 2 - UI Redesign
 

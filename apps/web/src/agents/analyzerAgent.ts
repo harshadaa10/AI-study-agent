@@ -44,7 +44,7 @@ export async function analyzerAgent(
 
     const { data: tasks, error: tasksError } = await supabase
       .from('plan_tasks')
-      .select('task, topic, status, priority, plan_id')
+      .select('status')
       .eq('user_id', userId)
 
     if (tasksError) {
