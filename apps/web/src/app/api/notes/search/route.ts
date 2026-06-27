@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { query, userId } = body
+    const { query, userId, limit } = body
 
     if (!query || !userId) {
       return NextResponse.json(
@@ -22,7 +22,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const results = await semanticSearch(query, userId)
+    const matchLimit =
+      typeof limit === 'number' && Number.isInteger(limit)
+        ? Math.min(Math.max(limit, 1), 20)
+        : 5
+
+    const results = await semanticSearch(query, userId, matchLimit)
 
     return NextResponse.json({
       success: true,

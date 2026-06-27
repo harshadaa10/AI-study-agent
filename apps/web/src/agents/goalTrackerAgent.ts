@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 
 type Status = 'behind' | 'on_track' | 'ahead'
 
@@ -41,12 +41,6 @@ type StudyPlanRow = {
   created_at: string
 }
 
-function getServiceSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
 
 function startOfToday() {
   const today = new Date()
@@ -200,7 +194,7 @@ export async function goalTrackerAgent(userId: string): Promise<{
   error?: string
 }> {
   try {
-    const supabase = getServiceSupabase()
+    const supabase = supabaseAdmin;
 
     const { data: tasks, error: tasksError } = await supabase
       .from('plan_tasks')

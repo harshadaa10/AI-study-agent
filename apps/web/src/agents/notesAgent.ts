@@ -1,13 +1,7 @@
-import { createClient } from "@supabase/supabase-js"
+import { callOpenRouter } from "../lib/openrouter";
 import { generateEmbedding } from '../utils/embeddings'
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
-type ChatCompletionResponse = {
-  choices?: {
-    message?: {
-      content?: string
-    }
-  }[]
-}
 
 // ---- CHUNKING FUNCTION ----
 function splitIntoChunks(text: string, chunkSize = 2000, overlap = 200): string[] {
@@ -38,22 +32,10 @@ function splitIntoChunks(text: string, chunkSize = 2000, overlap = 200): string[
 // Uses global fetch (built into Next.js 14 — no import needed)
 async function processChunk(chunk: string): Promise<string | null> {
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "meta-llama/llama-3-8b-instruct",
-        messages: [
-          {
-            role: "system",
-            content: "You are an expert study notes generator. Always follow the exact output format requested.",
-          },
-          {
-            role: "user",
-            content: `Given this text chunk, generate:
+    const systemPrompt =
+      "You are an expert study notes generator. Always follow the exact output format requested.";
+
+    const userPrompt = `Given this text chunk, generate:
 1. Exactly 3 concise bullet points summarising the key ideas
 2. One detailed explanation paragraph
 3. One exam-style answer a student could write
@@ -74,30 +56,13 @@ EXPLANATION:
 [write your explanation paragraph here]
 
 EXAM ANSWER:
-[write your exam-style answer here]`,
-          },
-        ],
-      }),
-    })
+[write your exam-style answer here]`;
 
-    const data = await response.json() as ChatCompletionResponse
-
-    if (!response.ok) {
-      console.error("[NotesAgent] AI error:", JSON.stringify(data))
-      return null
-    }
-
-    const content = data.choices?.[0]?.message?.content
-    if (!content) {
-      console.error("[NotesAgent] AI returned empty content")
-      return null
-    }
-
-    return content
+    return await callOpenRouter(systemPrompt, userPrompt);
 
   } catch (err) {
-    console.error("[NotesAgent] processChunk threw:", err)
-    return null
+    console.error("[NotesAgent] processChunk failed:", err);
+    return null;
   }
 }
 
@@ -120,11 +85,6 @@ export async function processNotesAgent(
     console.log(`[NotesAgent] Split into ${chunks.length} chunk(s)`)
     console.log(`[NotesAgent] Chunk 0 length:`, chunks[0]?.length ?? 'NO CHUNKS')
 
-    // 2. Supabase client
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
 
     let notesCreated = 0
     const allNotes: string[] = []
@@ -143,13 +103,15 @@ export async function processNotesAgent(
       console.log(`[NotesAgent] Chunk ${i + 1} AI response received, saving to DB...`)
 
       // 4. Save to Supabase
-      const { error: dbError } = await supabase
-        .from("notes")
-        .insert({
-          user_id:     userId,
-          material_id: materialId,
-          content:     notes,
-        })
+      const { data: savedNote, error: dbError } = await supabaseAdmin
+      .from("notes")
+      .insert({
+      user_id: userId,
+      material_id: materialId,
+     content: notes,
+  })
+  .select("id")
+  .single();
 
       if (dbError) {
         console.error(`[NotesAgent] DB insert failed for chunk ${i + 1}:`, dbError.message)
@@ -162,21 +124,12 @@ export async function processNotesAgent(
       // ✅ Generate and save embedding for this note
 try {
   console.log(`[NotesAgent] Generating embedding for chunk ${i + 1}...`)
-
-  // Get the note's ID that was just inserted
-  const { data: savedNote } = await supabase
-    .from('notes')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('material_id', materialId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single()
+  
 
   if (savedNote) {
     const embedding = await generateEmbedding(notes)
 
-    const { error: embeddingError } = await supabase
+    const { error: embeddingError } = await supabaseAdmin
       .from('notes_embeddings')
       .insert({
         note_id:   savedNote.id,
@@ -188,6 +141,28 @@ try {
     } else {
       console.log(`[NotesAgent] ✅ Embedding saved for chunk ${i + 1}`)
     }
+    const { error: revisionError } = await supabaseAdmin
+  .from("revision_schedule")
+  .insert({
+    user_id: userId,
+    note_id: savedNote.id,
+    ease_factor: 2.5,
+    interval_days: 1,
+    repetitions: 0,
+    quality: null,
+    next_review_at: new Date().toISOString(),
+  });
+
+if (revisionError) {
+  console.error(
+    "[NotesAgent] Revision schedule error:",
+    revisionError.message
+  );
+} else {
+  console.log(
+    `[NotesAgent] ✅ Revision schedule created for chunk ${i + 1}`
+  );
+}
   }
 } catch (embErr) {
   // Don't fail the whole request if embedding fails
@@ -211,6 +186,7 @@ try {
       notesCreated,
       notes: allNotes.join("\n\n---\n\n"),
     }
+    
 
   } catch (err) {
     console.error("[NotesAgent] Fatal error:", err)

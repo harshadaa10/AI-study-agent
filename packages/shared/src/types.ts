@@ -49,6 +49,22 @@ export type Note = {
   updated_at: string;
 };
 
+export type NotesEmbedding = {
+  id: string;
+  note_id: string;
+  embedding: number[];
+};
+
+export type QuizSession = {
+  id: string;
+  user_id: string;
+  subject: string;
+  score: number;
+  total_questions: number;
+  correct_answers: number;
+  created_at: string;
+};
+
 export type RevisionSchedule = {
   id: string;
   user_id: string;

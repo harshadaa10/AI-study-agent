@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
-
+import { supabaseAdmin } from '@/lib/supabase/admin'
+import { callOpenRouter } from "@/lib/openrouter";
 // ---- TYPES ----
 
 // Matches the plan's exact response schema
@@ -18,13 +18,6 @@ type SubjectStats = {
   completionRate:  number
 }
 
-type ChatCompletionResponse = {
-  choices?: {
-    message?: {
-      content?: string
-    }
-  }[]
-}
 
 // ---- MAIN AGENT FUNCTION ----
 export async function analyzerAgent(
@@ -34,22 +27,17 @@ export async function analyzerAgent(
   try {
     console.log(`[AnalyzerAgent] Starting analysis for user: ${userId}`)
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
 
     // ---- STEP 1: Query plan_tasks — completion rates per subject ----
     console.log('[AnalyzerAgent] Fetching plan_tasks...')
+const { data: tasks, error: tasksError } = await supabaseAdmin
+  .from("plan_tasks")
+  .select("status")
+  .eq("user_id", userId);
 
-    const { data: tasks, error: tasksError } = await supabase
-      .from('plan_tasks')
-      .select('task, topic, status, priority, plan_id')
-      .eq('user_id', userId)
-
-    if (tasksError) {
-      throw new Error(`plan_tasks query failed: ${tasksError.message}`)
-    }
+if (tasksError) {
+  throw new Error(`plan_tasks query failed: ${tasksError.message}`);
+}
 
     console.log(`[AnalyzerAgent] Found ${tasks?.length ?? 0} tasks`)
 
@@ -59,7 +47,7 @@ export async function analyzerAgent(
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-    const { data: quizzes, error: quizzesError } = await supabase
+    const { data: quizzes, error: quizzesError } = await supabaseAdmin
       .from('quiz_sessions')
       .select('subject, score, total_questions, correct_answers, created_at')
       .eq('user_id', userId)
@@ -135,35 +123,16 @@ Return ONLY this exact JSON, no extra text:
 You analyze quiz scores and task completion rates to identify student weak areas and predict exam readiness.
 Always respond with valid JSON only. No markdown, no backticks, no explanation.`
 
-    // ---- STEP 5: Call Llama ----
-    console.log('[AnalyzerAgent] Calling Llama via OpenRouter...')
+   // ---- STEP 5: Call Llama ----
+console.log('[AnalyzerAgent] Calling Llama via OpenRouter...')
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'meta-llama/llama-3-8b-instruct',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user',   content: prompt }
-        ],
-      }),
-    })
+const rawText = await callOpenRouter(
+  systemPrompt,
+  prompt
+)
 
-    if (!response.ok) {
-      const err = await response.text()
-      throw new Error(`OpenRouter error: ${err}`)
-    }
-
-    const data = await response.json() as ChatCompletionResponse
-    const rawText = data.choices?.[0]?.message?.content
-
-    if (!rawText) throw new Error('Llama returned empty response')
-
-    console.log('[AnalyzerAgent] AI response received, parsing JSON...')
+console.log('[AnalyzerAgent] AI response received, parsing JSON...')
+   
 
     // ---- STEP 6: Parse response ----
     let analysis: AnalysisResult
@@ -188,7 +157,7 @@ Always respond with valid JSON only. No markdown, no backticks, no explanation.`
     console.log(`[AnalyzerAgent] Analysis parsed — readiness: ${analysis.readiness_score}%`)
 
     // ---- STEP 7: Save to performance_logs ----
-    const { data: savedLog, error: logError } = await supabase
+    const { data: savedLog, error: logError } = await supabaseAdmin
       .from('performance_logs')
       .insert({
         user_id:         userId,

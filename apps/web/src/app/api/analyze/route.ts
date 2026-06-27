@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { analyzerAgent } from '../../../agents/analyzerAgent'
+import { orchestrate, TASK_TYPES } from '../../../agents/orchestrator'
 
 export async function POST(request: NextRequest) {
   console.log('[API /analyze] Request received')
@@ -15,7 +15,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const result = await analyzerAgent(userId)
+    const result = await orchestrate({
+      userId,
+      taskType: TASK_TYPES.ANALYZE_PERFORMANCE,
+      payload: {},
+    })
 
     return NextResponse.json(result)
 

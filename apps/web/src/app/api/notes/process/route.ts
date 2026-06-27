@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-import { processNotesAgent } from "@/agents/notesAgent"
+import { orchestrate, TASK_TYPES } from "@/agents/orchestrator"
 import PDFParser from "pdf2json"
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs"
 
@@ -74,14 +74,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Supabase client
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+  
 
     // Fetch material record
-    const { data: material, error: materialError } = await supabase
+    const { data: material, error: materialError } = await supabaseAdmin
       .from("uploaded_materials")
       .select("file_url, user_id")
       .eq("id", materialId)
@@ -133,12 +129,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Call Notes Agent
-    console.log("[API] Calling processNotesAgent...")
-    const result = await processNotesAgent(userId, materialId, extractedText)
-    console.log("[API] processNotesAgent result:", JSON.stringify(result, null, 2))
+    // Call Notes Agent through the Orchestrator, matching the other API handlers.
+    console.log("[API] Calling orchestrator notes flow...")
+    const result = await orchestrate({
+      userId,
+      taskType: TASK_TYPES.PROCESS_NOTES,
+      payload: {
+        materialId,
+        pdfText: extractedText,
+      },
+    })
+    console.log("[API] orchestrator notes result:", JSON.stringify(result, null, 2))
 
-    return NextResponse.json({ success: result.success, result })
+    return NextResponse.json(result)
 
   } catch (err) {
     console.error("[API] 🔥 FULL ERROR:", err)

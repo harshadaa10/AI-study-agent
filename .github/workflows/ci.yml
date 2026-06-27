@@ -4,9 +4,10 @@ on:
   push:
     branches:
       - main
+      - day-*
   pull_request:
     branches:
-      - main
+      - "**"
 
 jobs:
   lint-frontend:
@@ -23,7 +24,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
 
@@ -32,6 +33,12 @@ jobs:
 
       - name: Lint frontend
         run: npm run lint
+
+      - name: Build frontend
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
 
   test-agents:
     runs-on: ubuntu-latest
