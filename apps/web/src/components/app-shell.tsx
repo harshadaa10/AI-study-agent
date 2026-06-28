@@ -43,7 +43,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* NAV */}
         <nav className="flex-1 px-3 py-4 space-y-1">
-          {navItems.map((item, i) => {
+          {navItems.map((item) => {
             const active = pathname === item.path;
 
             return (

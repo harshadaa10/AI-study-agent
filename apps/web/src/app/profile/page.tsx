@@ -1,5 +1,5 @@
 "use client";
-
+import { useMemo } from "react";
 import { useEffect, useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,11 +13,10 @@ type UserProfile = {
 };
 
 export default function ProfilePage() {
-  const supabase = createBrowserSupabase();
+  const supabase = useMemo(() => createBrowserSupabase(), []);
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-
+  const [loading, setLoading] = useState(true);                                 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
 
@@ -62,7 +61,9 @@ export default function ProfilePage() {
 
     fetchProfile();
   }, []);
-
+ if (loading) {
+  return <p>Loading...</p>;
+}
  const handleUpdate = async () => {
   if (!profile?.id) {
     alert("Profile not loaded.");

@@ -191,10 +191,10 @@ const handleUndoDelete = async () => {
       {/* STEP 4: CONFIRMATION MODAL */}
       {deleteTarget && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-          <div className="w-[340px] rounded-lg bg-white p-5 space-y-4">
+          <div className="w-85 rounded-lg bg-white p-5 space-y-4">
 
             <p className="font-semibold">
-              Delete "{deleteTarget.file_name}"?
+             Are you sure you want to delete <strong>{deleteTarget.file_name}</strong>?
             </p>
 
             <p className="text-sm text-gray-500">
@@ -242,7 +242,7 @@ const handleUndoDelete = async () => {
       {/* STEP 5: UNDO TOAST */}
       {lastDeleted && (
         <div className="fixed bottom-6 right-6 bg-black text-white px-4 py-2 rounded z-50">
-          Deleted "{lastDeleted.file_name}"
+         Deleted <strong>{lastDeleted.file_name}</strong>
 
           <button
             className="ml-3 underline"
