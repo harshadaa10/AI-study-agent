@@ -31,14 +31,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       profile: data,
     });
-  } catch (err: any) {
-    console.error(err);
+  } catch (err: unknown) {
+  const message =
+    err instanceof Error ? err.message : "Unknown error";
 
-    return NextResponse.json(
-      { error: err.message },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(
+    { error: message },
+    { status: 500 }
+  );
+}
 }
 
 // ================= CREATE / UPDATE PROFILE =================
@@ -83,12 +84,13 @@ export async function PUT(req: NextRequest) {
       success: true,
       profile: data,
     });
-  } catch (err: any) {
-    console.error(err);
+  } catch (err) {
+  const message =
+    err instanceof Error ? err.message : "Unknown error";
 
-    return NextResponse.json(
-      { error: err.message },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(
+    { error: message },
+    { status: 500 }
+  );
+}
 }
