@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { BarChart3, BookOpen, CheckCircle2, ClipboardList, Loader2, LogOut, Repeat2, Search, Target, Upload, type LucideIcon } from "lucide-react";
+import { BarChart3, BookOpen, CheckCircle2, ClipboardList, Loader2, LogOut, Repeat2, Search, Target, Upload, User, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
@@ -166,6 +166,9 @@ export default function DashboardPage() {
               </Button>
               <Button asChild variant="outline" size="sm" className="bg-[#f7f3ec]">
                 <Link href="/upload"><Upload className="h-4 w-4" />Upload</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm" className="bg-[#f7f3ec]">
+                <Link href="/profile"><User className="h-4 w-4" />Profile</Link>
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={handleSignOut} disabled={isSigningOut} className="bg-[#f7f3ec]">
                 {isSigningOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}Log out
