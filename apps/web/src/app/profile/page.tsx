@@ -1,5 +1,6 @@
 "use client";
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,9 +27,9 @@ export default function ProfilePage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
+const router = useRouter();
   if (!user) {
-    window.location.href = "/login";
+    router.replace("/login");
     return;
   }
 
@@ -60,9 +61,15 @@ export default function ProfilePage() {
 };
 
     fetchProfile();
-  }, []);
+  }, [supabase]);
  if (loading) {
-  return <p>Loading...</p>;
+  return (
+  <Card>
+    <CardContent className="py-10 text-center">
+      Loading profile...
+    </CardContent>
+  </Card>
+);
 }
  const handleUpdate = async () => {
   if (!profile?.id) {
