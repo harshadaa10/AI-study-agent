@@ -19,31 +19,62 @@ import { createBrowserSupabase } from "@/lib/supabase/browser";
 export default function LoginPage() {
   const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabase(), []);
+  console.log(
+  "Supabase URL:",
+  process.env.NEXT_PUBLIC_SUPABASE_URL
+);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
+async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+  console.log("✅ handleSubmit called");
+  console.log("Email:", email);
+
+  setError(null);
+  setIsSubmitting(true);
+
+  try {
+    console.log("Calling Supabase Auth...");
+
+    const result = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
     });
 
-    setIsSubmitting(false);
+    console.log("Returned from Supabase");
+    console.log(result);
 
-    if (signInError) {
-      setError(signInError.message);
+    if (result.error) {
+      console.error("LOGIN ERROR:", result.error);
+
+      setError(result.error.message);
+      setIsSubmitting(false);
       return;
     }
 
+    console.log("LOGIN SUCCESS");
+
+    setIsSubmitting(false);
+
     router.push("/dashboard");
+    console.log("Navigating to dashboard...");
+
+    router.push("/dashboard");
+
+    console.log("router.push finished");
+
     router.refresh();
+  } catch (err) {
+    console.error("CAUGHT EXCEPTION");
+    console.error(err);
+
+    setIsSubmitting(false);
   }
+}
 
   return (
     <main className="min-h-screen bg-[#f7f3ec] text-[#17201a]">
@@ -114,6 +145,12 @@ export default function LoginPage() {
                   Create an account
                 </Link>
               </p>
+              <p
+  role="alert"
+  className="mt-4 rounded-md border border-[#e6b3a5] bg-[#fff3ef] px-3 py-2 text-sm text-[#8b2f18]"
+>
+  {error}
+</p>
             </form>
           </CardContent>
         </Card>

@@ -1,3 +1,6 @@
+import * as dotenv from "dotenv";
+dotenv.config({ path: ".env.test" });
+
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
@@ -53,12 +56,12 @@ export default defineConfig({
         ...devices["Desktop Safari"],
       },
     },
-  ],
+  ]});
 
-  webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
-});
+ // webServer: {
+ //   command: "npm run dev",
+ //   url: "http://localhost:3000",
+ //   reuseExistingServer: !process.env.CI,
+ //   timeout: 120000,
+ // },
+//});

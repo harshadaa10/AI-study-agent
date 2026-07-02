@@ -1,6 +1,6 @@
 "use client";
-import { useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { useEffect, useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ type UserProfile = {
 };
 
 export default function ProfilePage() {
+  const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabase(), []);
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -27,7 +28,7 @@ export default function ProfilePage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-const router = useRouter();
+
   if (!user) {
     router.replace("/login");
     return;
