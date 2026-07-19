@@ -37,13 +37,18 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
-      - name: Build application
-        run: npm run build
+     -  name: Build
+  run: npm run build
+  working-directory: apps/web
+  env:
+    NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
-      - name: Run Playwright tests
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
-          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
-        run: npx playwright test --project=chromium
+-  name: Run Playwright tests
+  run: npx playwright test --project=chromium
+  working-directory: apps/web
+  env:
+    NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+    E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+    E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
