@@ -31,44 +31,24 @@ export default function LoginPage() {
 async function handleSubmit(event: FormEvent<HTMLFormElement>) {
   event.preventDefault();
 
-  console.log("✅ handleSubmit called");
-  console.log("Email:", email);
-
   setError(null);
   setIsSubmitting(true);
+try{
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: email.trim(),
+    password,
+  });
 
-  try {
-    console.log("Calling Supabase Auth...");
+  setIsSubmitting(false);
 
-    const result = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+  if (signInError) {
+    setError(signInError.message);
+    return;
+  }
 
-    console.log("Returned from Supabase");
-    console.log(result);
-
-    if (result.error) {
-      console.error("LOGIN ERROR:", result.error);
-
-      setError(result.error.message);
-      setIsSubmitting(false);
-      return;
-    }
-
-    console.log("LOGIN SUCCESS");
-
-    setIsSubmitting(false);
-
-    router.push("/dashboard");
-    console.log("Navigating to dashboard...");
-
-    router.push("/dashboard");
-
-    console.log("router.push finished");
-
-    router.refresh();
-  } catch (err) {
+  // Navigate only once after successful login
+  router.push("/dashboard");
+}catch (err) {
     console.error("CAUGHT EXCEPTION");
     console.error(err);
 
@@ -145,12 +125,6 @@ async function handleSubmit(event: FormEvent<HTMLFormElement>) {
                   Create an account
                 </Link>
               </p>
-              <p
-  role="alert"
-  className="mt-4 rounded-md border border-[#e6b3a5] bg-[#fff3ef] px-3 py-2 text-sm text-[#8b2f18]"
->
-  {error}
-</p>
             </form>
           </CardContent>
         </Card>
