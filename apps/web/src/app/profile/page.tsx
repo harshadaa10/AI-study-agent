@@ -62,7 +62,7 @@ export default function ProfilePage() {
 };
 
     fetchProfile();
-  }, [supabase]);
+ }, [router, supabase]);
  if (loading) {
   return (
   <Card>
