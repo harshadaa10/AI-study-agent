@@ -112,7 +112,14 @@ try{
                   {error}
                 </p>
               ) : null}
-
+{error && (
+  <p
+    role="alert"
+    className="mt-4 rounded-md border border-[#e6b3a5] bg-[#fff3ef] px-3 py-2 text-sm text-[#8b2f18]"
+  >
+    {error}
+  </p>
+)}
               <Button type="submit" disabled={isSubmitting} className="mt-6 w-full">
                 {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 Log in

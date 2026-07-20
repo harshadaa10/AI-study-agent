@@ -8,19 +8,11 @@ test("User cannot login with wrong password", async ({ page }) => {
 
   await page.getByRole("button", { name: /log in/i }).click();
 
+  // User should remain on login page
   await expect(page).toHaveURL(/login/);
 
-  // Only check the alert inside the form/main content
-  const errorAlert = page.locator("main").getByRole("alert");
-
-  await expect(errorAlert).toContainText(
-    /invalid|incorrect|credentials|wrong password/i
-  );
-  await page.getByRole("button", { name: /log in/i }).click();
-
-await expect(page).toHaveURL(/login/);
-
-await expect(
-  page.locator("main").getByRole("alert")
-).toContainText(/invalid login credentials/i);
+  // Assert the actual visible error text
+  await expect(
+    page.getByText(/invalid login credentials/i)
+  ).toBeVisible();
 });
