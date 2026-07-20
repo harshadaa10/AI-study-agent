@@ -11,8 +11,8 @@ test("User cannot login with wrong password", async ({ page }) => {
   // User should remain on login page
   await expect(page).toHaveURL(/login/);
 
-  // Check the visible error text directly
-  await expect(
-    page.getByText(/invalid login credentials/i)
-  ).toBeVisible();
+  // Target only the login form error alert
+  const errorAlert = page.locator("main").getByRole("alert");
+
+  await expect(errorAlert).toContainText(/invalid login credentials/i);
 });
