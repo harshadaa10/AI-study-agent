@@ -11,7 +11,7 @@ test("User cannot login with wrong password", async ({ page }) => {
   // User should remain on login page
   await expect(page).toHaveURL(/login/);
 
-  // Assert the actual visible error text
+  // Check the visible error text directly
   await expect(
     page.getByText(/invalid login credentials/i)
   ).toBeVisible();
