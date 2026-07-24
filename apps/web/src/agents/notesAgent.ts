@@ -1,31 +1,34 @@
 import { callOpenRouter } from "../lib/openrouter";
-import { generateEmbedding } from '../utils/embeddings'
+import { generateEmbedding } from "../utils/embeddings";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-
 // ---- CHUNKING FUNCTION ----
-function splitIntoChunks(text: string, chunkSize = 2000, overlap = 200): string[] {
-  const trimmed = text.trim()
+function splitIntoChunks(
+  text: string,
+  chunkSize = 2000,
+  overlap = 200,
+): string[] {
+  const trimmed = text.trim();
 
   // If text is shorter than chunkSize, just return it as one chunk
   if (trimmed.length <= chunkSize) {
-    return trimmed.length > 20 ? [trimmed] : []
+    return trimmed.length > 20 ? [trimmed] : [];
   }
 
-  const chunks: string[] = []
-  let start = 0
+  const chunks: string[] = [];
+  let start = 0;
 
   while (start < trimmed.length) {
-    const end = Math.min(start + chunkSize, trimmed.length)
-    const chunk = trimmed.slice(start, end).trim()
+    const end = Math.min(start + chunkSize, trimmed.length);
+    const chunk = trimmed.slice(start, end).trim();
     if (chunk.length > 20) {
-      chunks.push(chunk)
+      chunks.push(chunk);
     }
-    if (end === trimmed.length) break  // reached the end — stop
-    start = end - overlap
+    if (end === trimmed.length) break; // reached the end — stop
+    start = end - overlap;
   }
 
-  return chunks
+  return chunks;
 }
 
 // ---- AI CALL FOR ONE CHUNK ----
@@ -59,141 +62,158 @@ EXAM ANSWER:
 [write your exam-style answer here]`;
 
     return await callOpenRouter(systemPrompt, userPrompt);
-
   } catch (err) {
     console.error("[NotesAgent] processChunk failed:", err);
     return null;
   }
 }
 
-
 // ---- MAIN AGENT FUNCTION ----
 export async function processNotesAgent(
   userId: string,
   materialId: string,
-  text: string
+  text: string,
 ) {
   try {
-    console.log("[NotesAgent] Starting — text length:", text.length)
+    console.log("[NotesAgent] Starting — text length:", text.length);
 
     if (!text || text.trim().length < 20) {
-      return { success: false, notesCreated: 0, error: "Text too small to process" }
+      return {
+        success: false,
+        notesCreated: 0,
+        error: "Text too small to process",
+      };
     }
 
     // 1. Split into overlapping chunks
-    const chunks = splitIntoChunks(text)
-    console.log(`[NotesAgent] Split into ${chunks.length} chunk(s)`)
-    console.log(`[NotesAgent] Chunk 0 length:`, chunks[0]?.length ?? 'NO CHUNKS')
+    const chunks = splitIntoChunks(text);
+    console.log(`[NotesAgent] Split into ${chunks.length} chunk(s)`);
+    console.log(
+      `[NotesAgent] Chunk 0 length:`,
+      chunks[0]?.length ?? "NO CHUNKS",
+    );
 
-
-    let notesCreated = 0
-    const allNotes: string[] = []
+    let notesCreated = 0;
+    const allNotes: string[] = [];
 
     // 3. Process each chunk
     for (let i = 0; i < chunks.length; i++) {
-      console.log(`[NotesAgent] Processing chunk ${i + 1}/${chunks.length}...`)
+      console.log(`[NotesAgent] Processing chunk ${i + 1}/${chunks.length}...`);
 
-      const notes = await processChunk(chunks[i])
+      const notes = await processChunk(chunks[i]);
 
       if (!notes) {
-        console.warn(`[NotesAgent] Chunk ${i + 1} returned no notes — skipping`)
-        continue
+        console.warn(
+          `[NotesAgent] Chunk ${i + 1} returned no notes — skipping`,
+        );
+        continue;
       }
 
-      console.log(`[NotesAgent] Chunk ${i + 1} AI response received, saving to DB...`)
+      console.log(
+        `[NotesAgent] Chunk ${i + 1} AI response received, saving to DB...`,
+      );
 
       // 4. Save to Supabase
       const { data: savedNote, error: dbError } = await supabaseAdmin
-      .from("notes")
-      .insert({
-      user_id: userId,
-      material_id: materialId,
-     content: notes,
-  })
-  .select("id")
-  .single();
+        .from("notes")
+        .insert({
+          user_id: userId,
+          material_id: materialId,
+          content: notes,
+        })
+        .select("id")
+        .single();
 
       if (dbError) {
-        console.error(`[NotesAgent] DB insert failed for chunk ${i + 1}:`, dbError.message)
-        continue
+        console.error(
+          `[NotesAgent] DB insert failed for chunk ${i + 1}:`,
+          dbError.message,
+        );
+        continue;
       }
 
-      allNotes.push(notes)
-      notesCreated++
-      console.log(`[NotesAgent] ✅ Chunk ${i + 1} saved to DB`)
+      allNotes.push(notes);
+      notesCreated++;
+      console.log(`[NotesAgent] ✅ Chunk ${i + 1} saved to DB`);
       // ✅ Generate and save embedding for this note
-try {
-  console.log(`[NotesAgent] Generating embedding for chunk ${i + 1}...`)
-  
+      try {
+        console.log(`[NotesAgent] Generating embedding for chunk ${i + 1}...`);
 
-  if (savedNote) {
-    const embedding = await generateEmbedding(notes)
+        if (savedNote) {
+          const embedding = await generateEmbedding(notes);
 
-    const { error: embeddingError } = await supabaseAdmin
-      .from('notes_embeddings')
-      .insert({
-        note_id:   savedNote.id,
-        embedding: JSON.stringify(embedding),  // pgvector accepts JSON array format
-      })
+          const { error: embeddingError } = await supabaseAdmin
+            .from("notes_embeddings")
+            .insert({
+              note_id: savedNote.id,
+              embedding: JSON.stringify(embedding), // pgvector accepts JSON array format
+            });
 
-    if (embeddingError) {
-      console.error(`[NotesAgent] Embedding save failed:`, embeddingError.message)
-    } else {
-      console.log(`[NotesAgent] ✅ Embedding saved for chunk ${i + 1}`)
-    }
-    const { error: revisionError } = await supabaseAdmin
-  .from("revision_schedule")
-  .insert({
-    user_id: userId,
-    note_id: savedNote.id,
-    ease_factor: 2.5,
-    interval_days: 1,
-    repetitions: 0,
-    quality: null,
-    next_review_at: new Date().toISOString(),
-  });
+          if (embeddingError) {
+            console.error(
+              `[NotesAgent] Embedding save failed:`,
+              embeddingError.message,
+            );
+          } else {
+            console.log(`[NotesAgent] ✅ Embedding saved for chunk ${i + 1}`);
+          }
+          const { error: revisionError } = await supabaseAdmin
+            .from("revision_schedule")
+            .insert({
+              user_id: userId,
+              note_id: savedNote.id,
+              ease_factor: 2.5,
+              interval_days: 1,
+              repetitions: 0,
+              quality: null,
+              next_review_at: new Date().toISOString(),
+            });
 
-if (revisionError) {
-  console.error(
-    "[NotesAgent] Revision schedule error:",
-    revisionError.message
-  );
-} else {
-  console.log(
-    `[NotesAgent] ✅ Revision schedule created for chunk ${i + 1}`
-  );
-}
-  }
-} catch (embErr) {
-  // Don't fail the whole request if embedding fails
-  console.error(`[NotesAgent] Embedding generation failed:`, embErr)
-}
+          if (revisionError) {
+            console.error(
+              "[NotesAgent] Revision schedule error:",
+              revisionError.message,
+            );
+          } else {
+            console.log(
+              `[NotesAgent] ✅ Revision schedule created for chunk ${i + 1}`,
+            );
+          }
+        }
+      } catch (embErr) {
+        // Don't fail the whole request if embedding fails
+        console.error(`[NotesAgent] Embedding generation failed:`, embErr);
+      }
 
       // 5. Delay between chunks to avoid rate limits
       if (i < chunks.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 600))
+        await new Promise((resolve) => setTimeout(resolve, 600));
       }
     }
 
     if (notesCreated === 0) {
-      return { success: false, notesCreated: 0, error: "No chunks were successfully processed" }
+      return {
+        success: false,
+        notesCreated: 0,
+        error: "No chunks were successfully processed",
+      };
     }
 
-    console.log(`[NotesAgent] ✅ Done — ${notesCreated}/${chunks.length} chunks saved`)
+    console.log(
+      `[NotesAgent] ✅ Done — ${notesCreated}/${chunks.length} chunks saved`,
+    );
 
     return {
       success: true,
       notesCreated,
       notes: allNotes.join("\n\n---\n\n"),
-    }
-    
-
+    };
   } catch (err) {
-    console.error("[NotesAgent] Fatal error:", err)
+    console.error("[NotesAgent] Fatal error:", err);
     return {
       success: false,
       notesCreated: 0,
       error: err instanceof Error ? err.message : "Unknown error",
-    }
+    };
   }
 }

@@ -20,7 +20,5 @@ test("User can login with valid credentials", async ({ page }) => {
   await expect(page).toHaveURL(/dashboard/);
 
   // Optional: Verify dashboard content
-  await expect(
-    page.getByRole("heading", { name: /dashboard/i })
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: /dashboard/i })).toBeVisible();
 });

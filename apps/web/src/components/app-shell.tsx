@@ -24,21 +24,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen bg-[#0A0A0A] text-white">
-
       {/* SIDEBAR */}
       <aside className="w-64 border-r border-white/10 bg-black/40 backdrop-blur-xl flex flex-col">
-
         {/* LOGO */}
         <div className="px-5 py-5 border-b border-white/10">
           <div className="flex items-center gap-2">
             <Sparkles className="text-indigo-400" size={18} />
-            <h1 className="text-sm font-semibold tracking-wide">
-              AI Study OS
-            </h1>
+            <h1 className="text-sm font-semibold tracking-wide">AI Study OS</h1>
           </div>
-          <p className="text-xs text-white/40 mt-1">
-            Vercel-grade workspace
-          </p>
+          <p className="text-xs text-white/40 mt-1">Vercel-grade workspace</p>
         </div>
 
         {/* NAV */}
@@ -75,10 +69,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* MAIN AREA */}
       <div className="flex-1 flex flex-col">
-
         {/* TOPBAR */}
         <header className="h-14 border-b border-white/10 flex items-center justify-between px-6 bg-black/20 backdrop-blur-xl">
-
           <p className="text-xs text-white/50">
             Welcome back, build smarter ⚡
           </p>
@@ -86,7 +78,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <Button variant="outline" className="text-xs border-white/10">
             Toggle Theme
           </Button>
-
         </header>
 
         {/* CONTENT */}
@@ -97,7 +88,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         >
           {children}
         </motion.main>
-
       </div>
     </div>
   );

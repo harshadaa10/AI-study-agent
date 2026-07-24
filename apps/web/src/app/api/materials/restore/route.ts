@@ -2,7 +2,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(req: Request) {
   const { userId, materialId } = await req.json();
- await supabaseAdmin
+  await supabaseAdmin
     .from("materials")
     .update({ deleted_at: null })
     .eq("id", materialId)

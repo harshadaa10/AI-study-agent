@@ -5,7 +5,10 @@ export async function GET(request: NextRequest) {
   const userId = request.nextUrl.searchParams.get("userId");
 
   if (!userId) {
-    return NextResponse.json({ success: false, error: "userId is required" }, { status: 400 });
+    return NextResponse.json(
+      { success: false, error: "userId is required" },
+      { status: 400 },
+    );
   }
 
   try {
@@ -30,9 +33,11 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Server error" },
-      { status: 500 }
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Server error",
+      },
+      { status: 500 },
     );
   }
 }
-

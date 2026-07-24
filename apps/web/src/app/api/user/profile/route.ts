@@ -7,10 +7,7 @@ export async function GET(req: NextRequest) {
     const userId = req.nextUrl.searchParams.get("userId");
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "Missing userId" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
 
     const { data, error } = await supabaseAdmin
@@ -22,24 +19,17 @@ export async function GET(req: NextRequest) {
     if (error) {
       console.error("GET profile error:", error);
 
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({
       profile: data,
     });
   } catch (err: unknown) {
-  const message =
-    err instanceof Error ? err.message : "Unknown error";
+    const message = err instanceof Error ? err.message : "Unknown error";
 
-  return NextResponse.json(
-    { error: message },
-    { status: 500 }
-  );
-}
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 // ================= CREATE / UPDATE PROFILE =================
@@ -52,7 +42,7 @@ export async function PUT(req: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { error: "userId is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -66,7 +56,7 @@ export async function PUT(req: NextRequest) {
         },
         {
           onConflict: "id",
-        }
+        },
       )
       .select()
       .single();
@@ -74,10 +64,7 @@ export async function PUT(req: NextRequest) {
     if (error) {
       console.error("PUT profile error:", error);
 
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -85,12 +72,8 @@ export async function PUT(req: NextRequest) {
       profile: data,
     });
   } catch (err) {
-  const message =
-    err instanceof Error ? err.message : "Unknown error";
+    const message = err instanceof Error ? err.message : "Unknown error";
 
-  return NextResponse.json(
-    { error: message },
-    { status: 500 }
-  );
-}
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

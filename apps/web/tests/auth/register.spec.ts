@@ -68,10 +68,7 @@ test("User can register", async ({ page }) => {
   const count = await alerts.count();
 
   for (let i = 0; i < count; i++) {
-    console.log(
-      `Message ${i + 1}:`,
-      await alerts.nth(i).textContent()
-    );
+    console.log(`Message ${i + 1}:`, await alerts.nth(i).textContent());
   }
 
   console.log("\n========== PAGE TEXT ==========");

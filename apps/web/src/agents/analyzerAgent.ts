@@ -1,105 +1,115 @@
-import { supabaseAdmin } from '@/lib/supabase/admin'
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { callOpenRouter } from "@/lib/openrouter";
 // ---- TYPES ----
 
 // Matches the plan's exact response schema
 type AnalysisResult = {
-  weak_areas:     string[]
-  readiness_score: number
-  next_actions:   string[]
-}
+  weak_areas: string[];
+  readiness_score: number;
+  next_actions: string[];
+};
 
 type SubjectStats = {
-  subject:         string
-  avgScore:        number
-  quizCount:       number
-  tasksTotal:      number
-  tasksCompleted:  number
-  completionRate:  number
-}
-
+  subject: string;
+  avgScore: number;
+  quizCount: number;
+  tasksTotal: number;
+  tasksCompleted: number;
+  completionRate: number;
+};
 
 // ---- MAIN AGENT FUNCTION ----
-export async function analyzerAgent(
-  userId: string
-): Promise<{ success: boolean; analysis?: AnalysisResult; logId?: string; error?: string }> {
-
+export async function analyzerAgent(userId: string): Promise<{
+  success: boolean;
+  analysis?: AnalysisResult;
+  logId?: string;
+  error?: string;
+}> {
   try {
-    console.log(`[AnalyzerAgent] Starting analysis for user: ${userId}`)
-
+    console.log(`[AnalyzerAgent] Starting analysis for user: ${userId}`);
 
     // ---- STEP 1: Query plan_tasks — completion rates per subject ----
-    console.log('[AnalyzerAgent] Fetching plan_tasks...')
-const { data: tasks, error: tasksError } = await supabaseAdmin
-  .from("plan_tasks")
-  .select("status")
-  .eq("user_id", userId);
+    console.log("[AnalyzerAgent] Fetching plan_tasks...");
+    const { data: tasks, error: tasksError } = await supabaseAdmin
+      .from("plan_tasks")
+      .select("status")
+      .eq("user_id", userId);
 
-if (tasksError) {
-  throw new Error(`plan_tasks query failed: ${tasksError.message}`);
-}
-
-    console.log(`[AnalyzerAgent] Found ${tasks?.length ?? 0} tasks`)
-
-    // ---- STEP 2: Query quiz_sessions — scores per subject last 30 days ----
-    console.log('[AnalyzerAgent] Fetching quiz_sessions...')
-
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-
-    const { data: quizzes, error: quizzesError } = await supabaseAdmin
-      .from('quiz_sessions')
-      .select('subject, score, total_questions, correct_answers, created_at')
-      .eq('user_id', userId)
-      .gte('created_at', thirtyDaysAgo.toISOString())
-      .order('created_at', { ascending: false })
-
-    if (quizzesError) {
-      throw new Error(`quiz_sessions query failed: ${quizzesError.message}`)
+    if (tasksError) {
+      throw new Error(`plan_tasks query failed: ${tasksError.message}`);
     }
 
-    console.log(`[AnalyzerAgent] Found ${quizzes?.length ?? 0} quiz sessions`)
+    console.log(`[AnalyzerAgent] Found ${tasks?.length ?? 0} tasks`);
+
+    // ---- STEP 2: Query quiz_sessions — scores per subject last 30 days ----
+    console.log("[AnalyzerAgent] Fetching quiz_sessions...");
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data: quizzes, error: quizzesError } = await supabaseAdmin
+      .from("quiz_sessions")
+      .select("subject, score, total_questions, correct_answers, created_at")
+      .eq("user_id", userId)
+      .gte("created_at", thirtyDaysAgo.toISOString())
+      .order("created_at", { ascending: false });
+
+    if (quizzesError) {
+      throw new Error(`quiz_sessions query failed: ${quizzesError.message}`);
+    }
+
+    console.log(`[AnalyzerAgent] Found ${quizzes?.length ?? 0} quiz sessions`);
 
     // ---- STEP 3: Calculate stats per subject ----
 
     // Group quiz scores by subject
-    const quizBySubject: Record<string, number[]> = {}
+    const quizBySubject: Record<string, number[]> = {};
     for (const quiz of quizzes ?? []) {
       if (!quizBySubject[quiz.subject]) {
-        quizBySubject[quiz.subject] = []
+        quizBySubject[quiz.subject] = [];
       }
-      quizBySubject[quiz.subject].push(quiz.score)
+      quizBySubject[quiz.subject].push(quiz.score);
     }
 
     // Group tasks by subject (using topic as proxy since no subject column on tasks)
-    const totalTasks = tasks?.length ?? 0
-    const completedTasks = tasks?.filter(t => t.status === 'completed').length ?? 0
-    const pendingTasks = tasks?.filter(t => t.status === 'pending').length ?? 0
+    const totalTasks = tasks?.length ?? 0;
+    const completedTasks =
+      tasks?.filter((t) => t.status === "completed").length ?? 0;
+    const pendingTasks =
+      tasks?.filter((t) => t.status === "pending").length ?? 0;
 
     // Build subject stats array
-    const subjectStats: SubjectStats[] = Object.entries(quizBySubject).map(([subject, scores]) => {
-      const avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
-      return {
-        subject,
-        avgScore,
-        quizCount:       scores.length,
-        tasksTotal:      totalTasks,
-        tasksCompleted:  completedTasks,
-        completionRate:  totalTasks > 0
-          ? Math.round((completedTasks / totalTasks) * 100)
-          : 0,
-      }
-    })
+    const subjectStats: SubjectStats[] = Object.entries(quizBySubject).map(
+      ([subject, scores]) => {
+        const avgScore = Math.round(
+          scores.reduce((a, b) => a + b, 0) / scores.length,
+        );
+        return {
+          subject,
+          avgScore,
+          quizCount: scores.length,
+          tasksTotal: totalTasks,
+          tasksCompleted: completedTasks,
+          completionRate:
+            totalTasks > 0
+              ? Math.round((completedTasks / totalTasks) * 100)
+              : 0,
+        };
+      },
+    );
 
-    console.log('[AnalyzerAgent] Subject stats:', JSON.stringify(subjectStats))
+    console.log("[AnalyzerAgent] Subject stats:", JSON.stringify(subjectStats));
 
     // ---- STEP 4: Build AI prompt ----
     const prompt = `You are an academic performance analyzer. Analyze this student's study data and identify their weak areas.
 
 QUIZ PERFORMANCE (last 30 days):
-${subjectStats.map(s =>
-  `- ${s.subject}: avg score ${s.avgScore}% over ${s.quizCount} quiz(zes)`
-).join('\n')}
+${subjectStats
+  .map(
+    (s) =>
+      `- ${s.subject}: avg score ${s.avgScore}% over ${s.quizCount} quiz(zes)`,
+  )
+  .join("\n")}
 
 TASK COMPLETION:
 - Total tasks in study plan: ${totalTasks}
@@ -117,80 +127,77 @@ Return ONLY this exact JSON, no extra text:
   "weak_areas": ["weak area 1", "weak area 2", "weak area 3"],
   "readiness_score": 65,
   "next_actions": ["action 1", "action 2", "action 3"]
-}`
+}`;
 
     const systemPrompt = `You are an expert academic performance analyzer.
 You analyze quiz scores and task completion rates to identify student weak areas and predict exam readiness.
-Always respond with valid JSON only. No markdown, no backticks, no explanation.`
+Always respond with valid JSON only. No markdown, no backticks, no explanation.`;
 
-   // ---- STEP 5: Call Llama ----
-console.log('[AnalyzerAgent] Calling Llama via OpenRouter...')
+    // ---- STEP 5: Call Llama ----
+    console.log("[AnalyzerAgent] Calling Llama via OpenRouter...");
 
-const rawText = await callOpenRouter(
-  systemPrompt,
-  prompt
-)
+    const rawText = await callOpenRouter(systemPrompt, prompt);
 
-console.log('[AnalyzerAgent] AI response received, parsing JSON...')
-   
+    console.log("[AnalyzerAgent] AI response received, parsing JSON...");
 
     // ---- STEP 6: Parse response ----
-    let analysis: AnalysisResult
+    let analysis: AnalysisResult;
     try {
-      analysis = JSON.parse(rawText)
+      analysis = JSON.parse(rawText);
     } catch {
-      const cleaned = rawText.replace(/```json|```/g, '').trim()
-      analysis = JSON.parse(cleaned)
+      const cleaned = rawText.replace(/```json|```/g, "").trim();
+      analysis = JSON.parse(cleaned);
     }
 
     // Validate response schema
     if (!analysis.weak_areas || !Array.isArray(analysis.weak_areas)) {
-      throw new Error('Invalid analysis: missing weak_areas array')
+      throw new Error("Invalid analysis: missing weak_areas array");
     }
-    if (typeof analysis.readiness_score !== 'number') {
-      throw new Error('Invalid analysis: missing readiness_score')
+    if (typeof analysis.readiness_score !== "number") {
+      throw new Error("Invalid analysis: missing readiness_score");
     }
     if (!analysis.next_actions || !Array.isArray(analysis.next_actions)) {
-      throw new Error('Invalid analysis: missing next_actions array')
+      throw new Error("Invalid analysis: missing next_actions array");
     }
 
-    console.log(`[AnalyzerAgent] Analysis parsed — readiness: ${analysis.readiness_score}%`)
+    console.log(
+      `[AnalyzerAgent] Analysis parsed — readiness: ${analysis.readiness_score}%`,
+    );
 
     // ---- STEP 7: Save to performance_logs ----
     const { data: savedLog, error: logError } = await supabaseAdmin
-      .from('performance_logs')
+      .from("performance_logs")
       .insert({
-        user_id:         userId,
-        weak_areas:      analysis.weak_areas,
+        user_id: userId,
+        weak_areas: analysis.weak_areas,
         readiness_score: analysis.readiness_score,
-        next_actions:    analysis.next_actions,
-        analysis_data:   {
+        next_actions: analysis.next_actions,
+        analysis_data: {
           subjectStats,
           totalTasks,
           completedTasks,
           generatedAt: new Date().toISOString(),
         },
       })
-      .select('id')
-      .single()
+      .select("id")
+      .single();
 
     if (logError) {
-      throw new Error(`performance_logs insert failed: ${logError.message}`)
+      throw new Error(`performance_logs insert failed: ${logError.message}`);
     }
 
-    console.log(`[AnalyzerAgent] ✅ Analysis saved with ID: ${savedLog.id}`)
+    console.log(`[AnalyzerAgent] ✅ Analysis saved with ID: ${savedLog.id}`);
 
     return {
-      success:  true,
+      success: true,
       analysis,
-      logId:    savedLog.id,
-    }
-
+      logId: savedLog.id,
+    };
   } catch (err) {
-    console.error('[AnalyzerAgent] Error:', err)
+    console.error("[AnalyzerAgent] Error:", err);
     return {
       success: false,
-      error: err instanceof Error ? err.message : 'Unknown error',
-    }
+      error: err instanceof Error ? err.message : "Unknown error",
+    };
   }
 }

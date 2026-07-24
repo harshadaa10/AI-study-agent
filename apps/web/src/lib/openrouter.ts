@@ -9,7 +9,7 @@ type ChatCompletionResponse = {
 export async function callOpenRouter(
   systemPrompt: string,
   userPrompt: string,
-  model = "meta-llama/llama-3-8b-instruct"
+  model = "meta-llama/llama-3-8b-instruct",
 ): Promise<string> {
   const response = await fetch(
     "https://openrouter.ai/api/v1/chat/completions",
@@ -32,7 +32,7 @@ export async function callOpenRouter(
           },
         ],
       }),
-    }
+    },
   );
 
   if (!response.ok) {

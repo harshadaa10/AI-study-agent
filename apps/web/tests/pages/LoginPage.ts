@@ -11,9 +11,11 @@ export class LoginPage {
     await this.page.getByLabel(/email/i).fill(email);
     await this.page.getByLabel(/password/i).fill(password);
 
-    await this.page.getByRole("button", {
-      name: /login/i,
-    }).click();
+    await this.page
+      .getByRole("button", {
+        name: /login/i,
+      })
+      .click();
   }
 
   async expectDashboard() {

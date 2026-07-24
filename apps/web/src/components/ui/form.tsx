@@ -20,7 +20,7 @@ type FormFieldContextValue<
 };
 
 const FormFieldContext = React.createContext<FormFieldContextValue>(
-  {} as FormFieldContextValue
+  {} as FormFieldContextValue,
 );
 
 const FormField = <
@@ -45,11 +45,12 @@ function useFormField() {
   };
 }
 
-const FormItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("space-y-2", className)} {...props} />
-  )
-);
+const FormItem = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("space-y-2", className)} {...props} />
+));
 FormItem.displayName = "FormItem";
 
 const FormLabel = React.forwardRef<
@@ -68,11 +69,12 @@ const FormLabel = React.forwardRef<
 });
 FormLabel.displayName = "FormLabel";
 
-const FormControl = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn(className)} {...props} />
-  )
-);
+const FormControl = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn(className)} {...props} />
+));
 FormControl.displayName = "FormControl";
 
 const FormMessage = React.forwardRef<
@@ -92,4 +94,12 @@ const FormMessage = React.forwardRef<
 });
 FormMessage.displayName = "FormMessage";
 
-export { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, useFormField };
+export {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  useFormField,
+};
