@@ -17,9 +17,9 @@
 * [x] Register E2E test
 * [x] Logout E2E test
 * [x] Protected routes test
-* [ ] GitHub Actions CI
-* [ ] Typecheck script
-* [ ] Prettier
+* [x] GitHub Actions CI
+* [x] Typecheck script
+* [x] Prettier
 * [ ] Husky + lint-staged
 * [ ] PR / Issue templates
 
@@ -27,7 +27,7 @@
 
 ## Milestone 2 — Authentication
 
-* [ ] Google Login
+* [x] Google Login
 * [ ] Forgot Password
 * [ ] Reset Password
 * [ ] Email Verification

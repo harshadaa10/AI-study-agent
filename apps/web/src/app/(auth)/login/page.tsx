@@ -19,7 +19,6 @@ import { createBrowserSupabase } from "@/lib/supabase/browser";
 export default function LoginPage() {
   const router = useRouter();
   const supabase = useMemo(() => createBrowserSupabase(), []);
-  console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -45,13 +44,27 @@ export default function LoginPage() {
 
       // Navigate only once after successful login
       router.push("/dashboard");
+      
     } catch (err) {
       console.error("CAUGHT EXCEPTION");
       console.error(err);
 
       setIsSubmitting(false);
     }
+    
   }
+  const handleGoogleLogin = async () => {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`,
+    },
+  });
+
+  if (error) {
+    setError(error.message);
+  }
+};
 
   return (
     <main className="min-h-screen bg-[#f7f3ec] text-[#17201a]">
@@ -68,7 +81,13 @@ export default function LoginPage() {
             performance snapshots are waiting behind a secure Supabase session.
           </p>
         </div>
-
+<Button
+  type="button"
+  variant="outline"
+  onClick={handleGoogleLogin}
+>
+  Continue with Google
+</Button>
         <Card className="w-full">
           <CardHeader>
             <CardTitle>Log in</CardTitle>
