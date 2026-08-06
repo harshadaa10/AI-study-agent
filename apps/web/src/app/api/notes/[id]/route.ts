@@ -3,12 +3,15 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   const userId = request.nextUrl.searchParams.get("userId");
 
   if (!userId) {
-    return NextResponse.json({ success: false, error: "userId is required" }, { status: 400 });
+    return NextResponse.json(
+      { success: false, error: "userId is required" },
+      { status: 400 },
+    );
   }
 
   try {
@@ -19,16 +22,16 @@ export async function GET(
       .eq("id", params.id)
       .eq("user_id", userId)
       .single();
-      
-if (materialError || !material) {
-  return NextResponse.json(
-    {
-      success: false,
-      error: "Material not found",
-    },
-    { status: 404 }
-  );
-}
+
+    if (materialError || !material) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Material not found",
+        },
+        { status: 404 },
+      );
+    }
 
     const { data: notes, error: notesError } = await supabase
       .from("notes")
@@ -42,9 +45,11 @@ if (materialError || !material) {
     return NextResponse.json({ success: true, material, notes: notes ?? [] });
   } catch (error) {
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Server error" },
-      { status: 500 }
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Server error",
+      },
+      { status: 500 },
     );
   }
 }
-

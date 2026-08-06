@@ -9,7 +9,6 @@ const MATERIALS_BUCKET = "study-materials";
 type PdfParserError = Error | { parserError: Error };
 type PdfData = { Pages: { Texts: { R: { T: string }[] }[] }[] };
 
-
 function decodePdfText(value: string) {
   try {
     return decodeURIComponent(value);
@@ -29,8 +28,8 @@ function extractTextFromPDF(buffer: Buffer): Promise<string> {
     pdfParser.on("pdfParser_dataReady", (pdfData: PdfData) => {
       const text = pdfData.Pages.map((page) =>
         page.Texts.map((textItem) =>
-          textItem.R.map((run) => decodePdfText(run.T)).join("")
-        ).join(" ")
+          textItem.R.map((run) => decodePdfText(run.T)).join(""),
+        ).join(" "),
       ).join("\n");
 
       resolve(text);
@@ -49,14 +48,14 @@ export async function POST(request: NextRequest) {
     if (!userId || !(file instanceof File)) {
       return NextResponse.json(
         { success: false, error: "userId and PDF file are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (file.type !== "application/pdf") {
       return NextResponse.json(
         { success: false, error: "Only PDF uploads are supported" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -78,11 +77,13 @@ export async function POST(request: NextRequest) {
       });
 
     if (uploadError) {
-  console.error("Storage Upload Error:", uploadError);
-  throw new Error(`Upload failed: ${uploadError.message}`);
-}
+      console.error("Storage Upload Error:", uploadError);
+      throw new Error(`Upload failed: ${uploadError.message}`);
+    }
 
-    const { data: publicUrlData } = supabase.storage.from(MATERIALS_BUCKET).getPublicUrl(filePath);
+    const { data: publicUrlData } = supabase.storage
+      .from(MATERIALS_BUCKET)
+      .getPublicUrl(filePath);
     const { data: material, error: materialError } = await supabase
       .from("uploaded_materials")
       .insert({
@@ -93,17 +94,17 @@ export async function POST(request: NextRequest) {
       .select("id, file_name, file_url")
       .single();
 
-   if (materialError) {
-  console.error("Material Insert Error:", materialError);
-  throw new Error(`Material insert failed: ${materialError.message}`);
-}
+    if (materialError) {
+      console.error("Material Insert Error:", materialError);
+      throw new Error(`Material insert failed: ${materialError.message}`);
+    }
 
     const pdfText = await extractTextFromPDF(buffer);
 
     if (!pdfText || pdfText.trim().length < 20) {
       return NextResponse.json(
         { success: false, material, error: "Could not extract text from PDF" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -111,7 +112,12 @@ export async function POST(request: NextRequest) {
       userId,
       taskType: TASK_TYPES.PROCESS_NOTES,
       payload: { materialId: material.id, pdfText },
-    })) as { success: boolean; notesCreated?: number; notes?: string; error?: string };
+    })) as {
+      success: boolean;
+      notesCreated?: number;
+      notes?: string;
+      error?: string;
+    };
 
     return NextResponse.json({
       success: result.success,
@@ -123,9 +129,11 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Materials Upload API Error:", error);
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Server error" },
-      { status: 500 }
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Server error",
+      },
+      { status: 500 },
     );
   }
 }
-

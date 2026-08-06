@@ -1,14 +1,13 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-
-
 export async function getRevisionQueue(userId: string) {
   try {
     const now = new Date().toISOString();
 
     const { data, error } = await supabaseAdmin
       .from("revision_schedule")
-      .select(`
+      .select(
+        `
         id,
         note_id,
         interval_days,
@@ -20,7 +19,8 @@ export async function getRevisionQueue(userId: string) {
         notes (
           content
         )
-      `)
+      `,
+      )
       .eq("user_id", userId)
       .lte("next_review_at", now)
       .order("next_review_at", { ascending: true });
@@ -42,7 +42,7 @@ export async function getRevisionQueue(userId: string) {
 export async function reviewNote(
   userId: string,
   noteId: string,
-  quality: number
+  quality: number,
 ) {
   try {
     const { data: revision, error } = await supabaseAdmin
@@ -73,10 +73,7 @@ export async function reviewNote(
       }
 
       easeFactor =
-        easeFactor +
-        (0.1 -
-          (5 - quality) *
-            (0.08 + (5 - quality) * 0.02));
+        easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
 
       if (easeFactor < 1.3) {
         easeFactor = 1.3;

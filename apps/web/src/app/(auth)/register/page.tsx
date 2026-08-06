@@ -36,7 +36,9 @@ export default function RegisterPage() {
       password,
       options: {
         emailRedirectTo:
-          typeof window !== "undefined" ? `${window.location.origin}/dashboard` : undefined,
+          typeof window !== "undefined"
+            ? `${window.location.origin}/dashboard`
+            : undefined,
       },
     });
 
@@ -53,7 +55,9 @@ export default function RegisterPage() {
       return;
     }
 
-    setMessage("Account created. Check your email to confirm your login before continuing.");
+    setMessage(
+      "Account created. Check your email to confirm your login before continuing.",
+    );
   }
 
   return (
@@ -67,8 +71,8 @@ export default function RegisterPage() {
             Create your workspace for plans, notes, revision, and progress.
           </h1>
           <p className="mt-5 max-w-xl text-base leading-7 text-[#4f5f57]">
-            Day 19 adds secure account creation so the next frontend milestones can personalize
-            onboarding and dashboard data per student.
+            Day 19 adds secure account creation so the next frontend milestones
+            can personalize onboarding and dashboard data per student.
           </p>
         </div>
 
@@ -119,15 +123,24 @@ export default function RegisterPage() {
                 </p>
               ) : null}
 
-              <Button type="submit" disabled={isSubmitting} className="mt-6 w-full">
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="mt-6 w-full"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : null}
                 Create account
                 {!isSubmitting ? <ArrowRight className="h-4 w-4" /> : null}
               </Button>
 
               <p className="mt-5 text-center text-sm text-[#68766f]">
                 Already have an account?{" "}
-                <Link href="/login" className="font-semibold text-[#2f615c] hover:text-[#17201a]">
+                <Link
+                  href="/login"
+                  className="font-semibold text-[#2f615c] hover:text-[#17201a]"
+                >
                   Log in
                 </Link>
               </p>

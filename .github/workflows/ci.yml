@@ -4,13 +4,13 @@ on:
   push:
     branches:
       - main
-      - day-*
+      - feature/google-auth
   pull_request:
     branches:
-      - "**"
+      - main
 
 jobs:
-  lint-frontend:
+  test:
     runs-on: ubuntu-latest
 
     defaults:
@@ -21,43 +21,37 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
 
-      - name: Install frontend dependencies
-        run: npm ci
+      - name: Install dependencies
+        run: npm install
 
-      - name: Lint frontend
+      - name: Run ESLint
         run: npm run lint
 
-      - name: Build frontend
+      - name: Run typecheck
+        run: npm run typecheck
+
+      - name: Build application
         run: npm run build
         env:
-          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
-  test-agents:
-    runs-on: ubuntu-latest
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
 
-    defaults:
-      run:
-        working-directory: apps/agents
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install agent dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Run agent tests
-        run: bun test
+      - name: Run Playwright tests
+        run: npx playwright test --project=chromium
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}

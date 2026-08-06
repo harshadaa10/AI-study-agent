@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   if (!userId) {
     return NextResponse.json(
       { success: false, error: "userId is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -32,25 +32,28 @@ export async function GET(request: NextRequest) {
         success: false,
         error: err instanceof Error ? err.message : "Server error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const body = (await request.json()) as { userId?: string; status?: string };
 
     if (!body.userId) {
-      return NextResponse.json({ success: false, error: "userId is required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "userId is required" },
+        { status: 400 },
+      );
     }
 
     if (body.status !== "pending" && body.status !== "completed") {
       return NextResponse.json(
         { success: false, error: "status must be pending or completed" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -68,9 +71,11 @@ export async function PATCH(
     return NextResponse.json({ success: true, task: data });
   } catch (error) {
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Server error" },
-      { status: 500 }
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Server error",
+      },
+      { status: 500 },
     );
   }
 }
-

@@ -26,24 +26,45 @@ export default function LoginPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
     setError(null);
     setIsSubmitting(true);
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+      setIsSubmitting(false);
 
-    setIsSubmitting(false);
+      if (signInError) {
+        setError(signInError.message);
+        return;
+      }
 
-    if (signInError) {
-      setError(signInError.message);
-      return;
+      // Navigate only once after successful login
+      router.push("/dashboard");
+      
+    } catch (err) {
+      console.error("CAUGHT EXCEPTION");
+      console.error(err);
+
+      setIsSubmitting(false);
     }
-
-    router.push("/dashboard");
-    router.refresh();
+    
   }
+  const handleGoogleLogin = async () => {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`,
+    },
+  });
+
+  if (error) {
+    setError(error.message);
+  }
+};
 
   return (
     <main className="min-h-screen bg-[#f7f3ec] text-[#17201a]">
@@ -56,11 +77,17 @@ export default function LoginPage() {
             Continue from your latest study checkpoint.
           </h1>
           <p className="mt-5 max-w-xl text-base leading-7 text-[#4f5f57]">
-            Your plans, notes, semantic search, spaced repetition queue, and performance snapshots
-            are waiting behind a secure Supabase session.
+            Your plans, notes, semantic search, spaced repetition queue, and
+            performance snapshots are waiting behind a secure Supabase session.
           </p>
         </div>
-
+<Button
+  type="button"
+  variant="outline"
+  onClick={handleGoogleLogin}
+>
+  Continue with Google
+</Button>
         <Card className="w-full">
           <CardHeader>
             <CardTitle>Log in</CardTitle>
@@ -97,20 +124,31 @@ export default function LoginPage() {
               />
 
               {error ? (
-                <p className="mt-4 rounded-md border border-[#e6b3a5] bg-[#fff3ef] px-3 py-2 text-sm text-[#8b2f18]">
+                <p
+                  role="alert"
+                  className="mt-4 rounded-md border border-[#e6b3a5] bg-[#fff3ef] px-3 py-2 text-sm text-[#8b2f18]"
+                >
                   {error}
                 </p>
               ) : null}
-
-              <Button type="submit" disabled={isSubmitting} className="mt-6 w-full">
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="mt-6 w-full"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : null}
                 Log in
                 {!isSubmitting ? <ArrowRight className="h-4 w-4" /> : null}
               </Button>
 
               <p className="mt-5 text-center text-sm text-[#68766f]">
                 New here?{" "}
-                <Link href="/register" className="font-semibold text-[#2f615c] hover:text-[#17201a]">
+                <Link
+                  href="/register"
+                  className="font-semibold text-[#2f615c] hover:text-[#17201a]"
+                >
                   Create an account
                 </Link>
               </p>

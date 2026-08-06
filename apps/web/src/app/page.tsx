@@ -10,11 +10,12 @@ export default function Home() {
             AI Study Agent
           </p>
           <h1 className="text-4xl font-semibold leading-tight sm:text-6xl">
-            Plan, learn, revise, and track exam readiness in one focused workspace.
+            Plan, learn, revise, and track exam readiness in one focused
+            workspace.
           </h1>
           <p className="mt-5 max-w-xl text-base leading-7 text-[#4f5f57] sm:text-lg">
-            Sign in to continue your study plan, generated notes, revision queue, and progress
-            snapshots.
+            Sign in to continue your study plan, generated notes, revision
+            queue, and progress snapshots.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild>
