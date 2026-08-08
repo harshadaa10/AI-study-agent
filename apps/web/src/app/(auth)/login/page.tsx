@@ -44,27 +44,25 @@ export default function LoginPage() {
 
       // Navigate only once after successful login
       router.push("/dashboard");
-      
     } catch (err) {
       console.error("CAUGHT EXCEPTION");
       console.error(err);
 
       setIsSubmitting(false);
     }
-    
   }
   const handleGoogleLogin = async () => {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
-    },
-  });
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
 
-  if (error) {
-    setError(error.message);
-  }
-};
+    if (error) {
+      setError(error.message);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-[#f7f3ec] text-[#17201a]">
@@ -81,13 +79,9 @@ export default function LoginPage() {
             performance snapshots are waiting behind a secure Supabase session.
           </p>
         </div>
-<Button
-  type="button"
-  variant="outline"
-  onClick={handleGoogleLogin}
->
-  Continue with Google
-</Button>
+        <Button type="button" variant="outline" onClick={handleGoogleLogin}>
+          Continue with Google
+        </Button>
         <Card className="w-full">
           <CardHeader>
             <CardTitle>Log in</CardTitle>
